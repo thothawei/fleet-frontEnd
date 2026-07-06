@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "bash scripts/dev.sh",
+    "stop": "bash scripts/stop.sh",
     "dev:backend": "cd ../line-fleet-dispatch && docker compose up --build -d",
     "dev:all": "npm run dev:backend && npm run dev",
     "build": "tsc -b && vite build",

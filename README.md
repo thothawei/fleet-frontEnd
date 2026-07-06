@@ -70,20 +70,21 @@ cp .env.example .env
 # 要改帳密才需在 .env 設 ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD
 ```
 
-### 啟動
+### 啟動 / 關閉（前後端一起）
 
 在 `line-fleet-admin` 目錄：
 
 ```bash
 npm install
 
-# 方式 A：一次啟動後端 + 前端
-npm run dev:all
-
-# 方式 B：分開啟動
-npm run dev:backend           # 等同 cd ../line-fleet-dispatch && docker compose up --build -d
-npm run dev                   # http://localhost:5173
+npm start     # ▶ 一鍵開：後端(docker) + 前端(vite)。按 Ctrl+C 會「一起關」前後端
+npm stop      # ■ 強制關：docker compose down + 結束 vite（不論當初怎麼啟動）
 ```
+
+`npm start` 會先把後端 docker 拉起來（含 build），再啟動前端 vite（前景）；
+在此視窗按 **Ctrl+C**，腳本的 trap 會自動 `docker compose down` 並結束 vite，前後端一起收掉。
+
+其他分開操作：`npm run dev`（只前端）、`npm run dev:backend`（只後端，detached）。
 
 瀏覽器開啟 **http://localhost:5173**，用以下帳密登入：
 
