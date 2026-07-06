@@ -1,0 +1,11 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', Roboto, sans-serif;
+}
