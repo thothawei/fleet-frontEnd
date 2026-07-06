@@ -49,8 +49,8 @@ export interface RideDetail {
 
 // ---- 端點 ----
 
-export async function login(email: string, password: string): Promise<LoginResp> {
-  const { data } = await api.post<LoginResp>('/admin/login', { email, password });
+export async function login(username: string, password: string): Promise<LoginResp> {
+  const { data } = await api.post<LoginResp>('/admin/login', { username, password });
   return data;
 }
 

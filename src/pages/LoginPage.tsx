@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { LockOutlined, MailOutlined } from '@ant-design/icons';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
 
 import { login } from '../api/admin';
 import { saveSession } from '../auth/auth';
@@ -10,10 +10,10 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values: { email: string; password: string }) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
-      const resp = await login(values.email, values.password);
+      const resp = await login(values.username, values.password);
       saveSession(resp.token, resp.name);
       navigate('/');
     } catch {
@@ -30,8 +30,8 @@ export default function LoginPage() {
           🚗 派遣後台登入
         </Typography.Title>
         <Form onFinish={onFinish} layout="vertical">
-          <Form.Item name="email" rules={[{ required: true, message: '請輸入 email' }]}>
-            <Input prefix={<MailOutlined />} placeholder="email" size="large" />
+          <Form.Item name="username" rules={[{ required: true, message: '請輸入帳號' }]}>
+            <Input prefix={<UserOutlined />} placeholder="帳號" size="large" />
           </Form.Item>
           <Form.Item name="password" rules={[{ required: true, message: '請輸入密碼' }]}>
             <Input.Password prefix={<LockOutlined />} placeholder="密碼" size="large" />
