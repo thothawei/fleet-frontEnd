@@ -20,4 +20,4 @@
 - [ ] C4a. ~~前端測試~~ ✅ Vitest + Testing Library（`npm test`）：`admin.test.ts`（parseTrack/normalizeRide）、`LoginPage`、`OrdersPage`、`OrderDetailPage`。
 - [ ] C4b. ~~bundle code-splitting~~ ✅ 路由 lazy import（`App.tsx` Suspense + dynamic import）。
 - [ ] C5. 視覺驗證：用瀏覽器/preview 實際載入各頁截圖確認渲染（含 OrderDetailPage 軌跡回放）。
-- [ ] CI：`tsc -b && vite build` + lint 的 pipeline（跨 repo 項 E2）。
+- [ ] CI：~~`tsc -b && vite build` + lint 的 pipeline~~ ✅ `.github/workflows/ci.yml`（lint + test + build）。

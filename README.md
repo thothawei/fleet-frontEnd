@@ -144,9 +144,13 @@ docker compose --profile simulator up -d simulator
 ### 打包
 
 ```bash
+npm run lint              # oxlint
+npm test                  # Vitest 元件/API 測試
 npm run build             # tsc 嚴格檢查 + production build
 npm run preview           # 預覽打包結果
 ```
+
+Push 到 `main` 或開 PR 時，GitHub Actions 會自動跑 `lint → test → build`（`.github/workflows/ci.yml`）。
 
 正式部署時 `.env` 需填入後端實際網址，例如：
 
@@ -160,4 +164,4 @@ VITE_WS_BASE=wss://api.example.com
 
 **已完成（本次 scaffold）**：登入、受保護路由、Ant Design 版面、即時車隊地圖、訂單/司機列表、日報表，全部串接後端 API/WS。`npm run build` 通過。
 
-**待辦**：司機審核啟用/停用（需後端補寫入端點）、派單參數設定、視覺驗證、CI。訂單詳情 + 軌跡回放、路由 code-splitting、關鍵頁測試（`npm test`）已完成。
+**待辦**：司機審核啟用/停用（需後端 D2）、派單參數設定（需後端 D3）、視覺驗證（C5）。訂單詳情 + 軌跡回放、路由 code-splitting、關鍵頁測試、CI 已完成。
