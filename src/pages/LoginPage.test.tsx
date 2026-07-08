@@ -20,6 +20,7 @@ vi.mock('../api/admin', () => ({
 
 vi.mock('../auth/auth', () => ({
   saveSession: (...args: unknown[]) => mockSaveSession(...args),
+  isLoggedIn: () => false,
 }));
 
 describe('LoginPage', () => {

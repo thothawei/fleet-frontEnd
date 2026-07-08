@@ -1,0 +1,55 @@
+{
+  "date": "2026-07-08",
+  "base": "http://localhost:5173",
+  "rideId": "4",
+  "passed": 6,
+  "failed": 0,
+  "results": [
+    {
+      "page": "01-login",
+      "url": "http://localhost:5173/login",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/c5-2026-07-08/01-login.png",
+      "status": "pass",
+      "notes": ""
+    },
+    {
+      "page": "02-fleet",
+      "url": "http://localhost:5173/",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/c5-2026-07-08/02-fleet.png",
+      "status": "pass",
+      "notes": "",
+      "mapCanvas": true
+    },
+    {
+      "page": "03-orders",
+      "url": "http://localhost:5173/orders",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/c5-2026-07-08/03-orders.png",
+      "status": "pass",
+      "notes": "",
+      "tableRows": 3
+    },
+    {
+      "page": "04-order-detail",
+      "url": "http://localhost:5173/orders/4",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/c5-2026-07-08/04-order-detail.png",
+      "status": "pass",
+      "notes": ""
+    },
+    {
+      "page": "05-drivers",
+      "url": "http://localhost:5173/drivers",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/c5-2026-07-08/05-drivers.png",
+      "status": "pass",
+      "notes": "",
+      "tableRows": 3
+    },
+    {
+      "page": "06-reports",
+      "url": "http://localhost:5173/reports",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/c5-2026-07-08/06-reports.png",
+      "status": "pass",
+      "notes": "",
+      "tableRows": 1
+    }
+  ]
+}

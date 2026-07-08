@@ -1,4 +1,4 @@
-import { CarOutlined, DashboardOutlined, LogoutOutlined, OrderedListOutlined, BarChartOutlined } from '@ant-design/icons';
+import { BarChartOutlined, CarOutlined, DashboardOutlined, LogoutOutlined, OrderedListOutlined, SettingOutlined } from '@ant-design/icons';
 import { Layout, Menu, Typography, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -11,6 +11,7 @@ const menuItems = [
   { key: '/orders', icon: <OrderedListOutlined />, label: '訂單管理' },
   { key: '/drivers', icon: <CarOutlined />, label: '司機管理' },
   { key: '/reports', icon: <BarChartOutlined />, label: '日報表' },
+  { key: '/settings', icon: <SettingOutlined />, label: '設定' },
 ];
 
 export default function AppLayout() {

@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 
 import { login } from '../api/admin';
-import { saveSession } from '../auth/auth';
+import { isLoggedIn, saveSession } from '../auth/auth';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn()) navigate('/', { replace: true });
+  }, [navigate]);
 
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);

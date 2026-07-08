@@ -12,6 +12,8 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "visual:verify": "node scripts/visual-verify.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -26,6 +28,7 @@
     "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -36,6 +39,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^27.0.1",
     "oxlint": "^1.71.0",
+    "playwright": "^1.61.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vitest": "^3.2.7"

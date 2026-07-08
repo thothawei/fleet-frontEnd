@@ -69,9 +69,23 @@ export interface RideFull {
   updated_at: string;
 }
 
+/** 訂單狀態審計（對齊後端 ride_events / D4） */
+export interface RideEvent {
+  id: number;
+  ride_id: number;
+  from_status: number | null;
+  to_status: number;
+  event_type: string;
+  actor_role: string;
+  actor_id: number | null;
+  note: string;
+  created_at: string;
+}
+
 export interface RideDetail {
   ride: RideFull;
   track_geojson: string;
+  events: RideEvent[];
 }
 
 // 軌跡 GeoJSON：admin 端點回傳裸 LineString；司機/乘客端點包成 Feature
@@ -108,8 +122,19 @@ export async function fetchFleet(): Promise<DriverLoc[]> {
 }
 
 export async function fetchDrivers(): Promise<Driver[]> {
-  const { data } = await api.get<{ drivers: Driver[] }>('/admin/drivers');
-  return data.drivers ?? [];
+  const { data } = await api.get<{ drivers: Record<string, unknown>[] }>('/admin/drivers');
+  return (data.drivers ?? []).map(normalizeDriver);
+}
+
+/** 兼容後端 PascalCase / snake_case */
+export function normalizeDriver(raw: Record<string, unknown>): Driver {
+  return {
+    ID: num(raw, 'ID', 'id'),
+    LineUserID: str(raw, 'LineUserID', 'line_user_id'),
+    Name: str(raw, 'Name', 'name'),
+    Phone: str(raw, 'Phone', 'phone'),
+    Status: num(raw, 'Status', 'status'),
+  };
 }
 
 export async function fetchRides(status?: number, limit = 100): Promise<RideRow[]> {
@@ -120,10 +145,31 @@ export async function fetchRides(status?: number, limit = 100): Promise<RideRow[
 }
 
 export async function fetchRideDetail(id: number): Promise<RideDetail> {
-  const { data } = await api.get<{ ride: Record<string, unknown>; track_geojson: string }>(
-    `/admin/rides/${id}`,
-  );
-  return { ride: normalizeRide(data.ride), track_geojson: data.track_geojson };
+  const { data } = await api.get<{
+    ride: Record<string, unknown>;
+    track_geojson: string;
+    events?: Record<string, unknown>[];
+  }>(`/admin/rides/${id}`);
+  return {
+    ride: normalizeRide(data.ride),
+    track_geojson: data.track_geojson,
+    events: (data.events ?? []).map(normalizeRideEvent),
+  };
+}
+
+/** 兼容 PascalCase / snake_case（與 normalizeRide 相同策略） */
+export function normalizeRideEvent(raw: Record<string, unknown>): RideEvent {
+  return {
+    id: num(raw, 'id', 'ID'),
+    ride_id: num(raw, 'ride_id', 'RideID'),
+    from_status: nullableNum(raw, 'from_status', 'FromStatus'),
+    to_status: num(raw, 'to_status', 'ToStatus'),
+    event_type: str(raw, 'event_type', 'EventType'),
+    actor_role: str(raw, 'actor_role', 'ActorRole'),
+    actor_id: nullableNum(raw, 'actor_id', 'ActorID'),
+    note: str(raw, 'note', 'Note'),
+    created_at: str(raw, 'created_at', 'CreatedAt'),
+  };
 }
 
 /** 兼容 b226f34 前後端 PascalCase / snake_case 混用 */
@@ -182,4 +228,34 @@ export async function fetchDailyReport(date: string): Promise<DailyReportRow[]> 
     params: { date },
   });
   return data.drivers ?? [];
+}
+
+export interface DispatchSettings {
+  radius_m: number;
+  max_drivers: number;
+  offer_timeout_sec: number;
+  max_attempts: number;
+  rate_limit_per_min: number;
+}
+
+export async function patchDriverStatus(id: number, enabled: boolean): Promise<Driver> {
+  const { data } = await api.patch<{ driver: Driver }>(`/admin/drivers/${id}/status`, { enabled });
+  return data.driver;
+}
+
+export async function fetchDispatchSettings(): Promise<DispatchSettings> {
+  const { data } = await api.get<DispatchSettings>('/admin/settings/dispatch');
+  return data;
+}
+
+export async function updateDispatchSettings(
+  body: Partial<DispatchSettings>,
+): Promise<DispatchSettings> {
+  const { data } = await api.put<DispatchSettings>('/admin/settings/dispatch', body);
+  return data;
+}
+
+export async function cancelRideByAdmin(id: number): Promise<string> {
+  const { data } = await api.post<{ message: string }>(`/admin/rides/${id}/cancel`);
+  return data.message;
 }

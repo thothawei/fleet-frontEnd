@@ -1,30 +1,17 @@
 /// <reference types="geojson" />
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert } from 'antd';
-import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined } from '@ant-design/icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Modal, message, Breadcrumb, Timeline } from 'antd';
+import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined, StopOutlined } from '@ant-design/icons';
+import type { AxiosError } from 'axios';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { fetchRideDetail, parseTrackCoordinates } from '../api/admin';
-import { RIDE_STATUS } from '../constants';
+import { cancelRideByAdmin, fetchRideDetail, parseTrackCoordinates } from '../api/admin';
+import { actorRoleLabel, isRideCancellable, RIDE_STATUS, rideEventLabel } from '../constants';
 
-// 免付費 key 的 OSM raster 圖磚（與 FleetPage 相同寫法）
-const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-};
-
-const TAIPEI: [number, number] = [121.5654, 25.033];
+import { DEFAULT_MAP_CENTER, MAP_HEIGHT, MAP_STYLE } from '../components/mapStyle';
 const TRACK_SOURCE_ID = 'ride-track';
 const TRACK_LAYER_ID = 'ride-track-line';
 const PLAYBACK_INTERVAL_MS = 300;
@@ -33,9 +20,15 @@ function fmtTime(t: string | null): string {
   return t ? new Date(t).toLocaleString('zh-TW') : '—';
 }
 
+function apiError(err: unknown, fallback: string): string {
+  const ax = err as AxiosError<{ error?: string }>;
+  return ax.response?.data?.error ?? fallback;
+}
+
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const rideId = Number(id);
 
   const { data, isLoading, error } = useQuery({
@@ -43,6 +36,27 @@ export default function OrderDetailPage() {
     queryFn: () => fetchRideDetail(rideId),
     enabled: Number.isFinite(rideId),
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelRideByAdmin(rideId),
+    onSuccess: (msg) => {
+      message.success(msg || '訂單已取消');
+      queryClient.invalidateQueries({ queryKey: ['ride', rideId] });
+      queryClient.invalidateQueries({ queryKey: ['rides'] });
+    },
+    onError: (err) => message.error(apiError(err, '取消失敗')),
+  });
+
+  const confirmCancel = () => {
+    Modal.confirm({
+      title: '強制取消此訂單？',
+      content: '已上車的訂單無法取消。此操作會通知相關司機與乘客。',
+      okText: '確認取消',
+      okButtonProps: { danger: true },
+      cancelText: '返回',
+      onOk: () => cancelMutation.mutateAsync(),
+    });
+  };
 
   const coordinates = useMemo(
     () => (data?.track_geojson ? parseTrackCoordinates(data.track_geojson) : []),
@@ -57,20 +71,26 @@ export default function OrderDetailPage() {
   const [playing, setPlaying] = useState(false);
   const [step, setStep] = useState(0);
 
-  // 初始化地圖（一次）
+  // 初始化地圖（容器固定掛載，資料載入後建立）
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    if (isLoading || !containerRef.current || mapRef.current) return;
+    if (containerRef.current.clientHeight === 0) return;
     mapRef.current = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
-      center: TAIPEI,
+      center: DEFAULT_MAP_CENTER,
       zoom: 12,
     });
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [isLoading, coordinates.length]);
+
+  // 軌跡區塊高度變更時重算地圖尺寸
+  useEffect(() => {
+    mapRef.current?.resize();
+  }, [coordinates.length]);
 
   // 軌跡載入後畫線 + 移動車輛 marker 到起點、視角置中
   useEffect(() => {
@@ -166,12 +186,31 @@ export default function OrderDetailPage() {
 
   const { ride } = data;
   const statusMeta = RIDE_STATUS[ride.status] ?? { label: String(ride.status), color: 'default' };
+  const canCancel = isRideCancellable(ride.status);
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
-      <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
-        返回訂單列表
-      </Button>
+      <Breadcrumb
+        items={[
+          { title: <a onClick={() => navigate('/orders')}>訂單管理</a> },
+          { title: `#${ride.id}` },
+        ]}
+      />
+      <Space>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
+          返回訂單列表
+        </Button>
+        {canCancel && (
+          <Button
+            danger
+            icon={<StopOutlined />}
+            loading={cancelMutation.isPending}
+            onClick={confirmCancel}
+          >
+            強制取消
+          </Button>
+        )}
+      </Space>
 
       <Card title={`訂單 #${ride.id}`}>
         <Descriptions
@@ -206,6 +245,44 @@ export default function OrderDetailPage() {
         />
       </Card>
 
+      <Card title="狀態時間軸">
+        {(data.events ?? []).length === 0 ? (
+          <Empty description="尚無審計事件" />
+        ) : (
+          <Timeline
+            items={(data.events ?? []).map((ev) => {
+              const fromMeta =
+                ev.from_status == null
+                  ? null
+                  : (RIDE_STATUS[ev.from_status] ?? { label: String(ev.from_status) });
+              const toMeta = RIDE_STATUS[ev.to_status] ?? { label: String(ev.to_status) };
+              const actor =
+                ev.actor_id != null
+                  ? `${actorRoleLabel(ev.actor_role)} #${ev.actor_id}`
+                  : actorRoleLabel(ev.actor_role);
+              return {
+                key: String(ev.id),
+                content: (
+                  <Space orientation="vertical" size={0}>
+                    <Space wrap>
+                      <strong>{rideEventLabel(ev.event_type)}</strong>
+                      {fromMeta && <Tag>{fromMeta.label}</Tag>}
+                      {fromMeta && <span>→</span>}
+                      <Tag color={toMeta.color}>{toMeta.label}</Tag>
+                      <Tag>{actor}</Tag>
+                    </Space>
+                    <span style={{ color: '#666', fontSize: 12 }}>
+                      {fmtTime(ev.created_at)}
+                      {ev.note ? ` · ${ev.note}` : ''}
+                    </span>
+                  </Space>
+                ),
+              };
+            })}
+          />
+        )}
+      </Card>
+
       <Card
         title="軌跡回放"
         extra={
@@ -236,7 +313,7 @@ export default function OrderDetailPage() {
         {/* 地圖容器固定掛載，避免軌跡資料非同步到位時因 DOM 節點替換導致 ref 失聯 */}
         <div
           ref={containerRef}
-          style={{ height: coordinates.length === 0 ? 0 : 500, width: '100%', overflow: 'hidden' }}
+          style={{ height: coordinates.length === 0 ? 0 : MAP_HEIGHT.track, width: '100%', overflow: 'hidden' }}
         />
         {coordinates.length > 0 && (
           <div style={{ padding: '12px 24px' }}>

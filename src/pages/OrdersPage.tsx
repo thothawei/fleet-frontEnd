@@ -12,6 +12,12 @@ const statusOptions = [
   ...Object.entries(RIDE_STATUS).map(([k, v]) => ({ value: Number(k), label: v.label })),
 ];
 
+const tableLocale = { emptyText: '尚無訂單' };
+
+function fmtTime(t: string | null): string {
+  return t ? new Date(t).toLocaleString('zh-TW') : '—';
+}
+
 export default function OrdersPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<number>(-1);
@@ -42,8 +48,14 @@ export default function OrdersPage() {
     {
       title: '叫車時間',
       dataIndex: 'requested_at',
-      width: 200,
-      render: (t: string) => new Date(t).toLocaleString('zh-TW'),
+      width: 180,
+      render: fmtTime,
+    },
+    {
+      title: '完成時間',
+      dataIndex: 'completed_at',
+      width: 180,
+      render: fmtTime,
     },
   ];
 
@@ -59,8 +71,9 @@ export default function OrdersPage() {
         loading={isLoading}
         columns={columns}
         dataSource={rides}
-        pagination={{ pageSize: 20 }}
+        pagination={{ pageSize: 20, showTotal: (total) => `共 ${total} 筆` }}
         size="middle"
+        locale={tableLocale}
         onRow={(record) => ({
           onClick: () => navigate(`/orders/${record.id}`),
           style: { cursor: 'pointer' },
