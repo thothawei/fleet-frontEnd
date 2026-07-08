@@ -6,6 +6,7 @@ import { isLoggedIn } from './auth/auth';
 import LoginPage from './pages/LoginPage';
 import FleetPage from './pages/FleetPage';
 import OrdersPage from './pages/OrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 import DriversPage from './pages/DriversPage';
 import ReportsPage from './pages/ReportsPage';
 
@@ -27,6 +28,7 @@ export default function App() {
       >
         <Route path="/" element={<FleetPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/:id" element={<OrderDetailPage />} />
         <Route path="/drivers" element={<DriversPage />} />
         <Route path="/reports" element={<ReportsPage />} />
       </Route>

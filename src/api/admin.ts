@@ -42,9 +42,46 @@ export interface DailyReportRow {
   avg_pickup_sec: number;
 }
 
+// 對齊後端 model.GeoPoint（無 json tag，欄位名維持 Go 大寫）
+export interface GeoPoint {
+  Lat: number;
+  Lng: number;
+}
+
+// 對齊後端 model.Ride（GetByID 直接序列化 struct，欄位名維持 Go 大寫，
+// 與 RideRow 用的 AdminRideRow snake_case 不同，這是後端既有行為，非本次修改範圍）
+export interface RideFull {
+  ID: number;
+  CustomerID: number;
+  DriverID: number | null;
+  Status: number;
+  PickupPoint: GeoPoint;
+  PickupAddress: string;
+  DropoffPoint: GeoPoint | null;
+  DropoffAddress: string;
+  RequestedAt: string;
+  AcceptedAt: string | null;
+  PickedUpAt: string | null;
+  CompletedAt: string | null;
+  DistanceM: number | null;
+  EtaPickupSec: number | null;
+  CreatedAt: string;
+  UpdatedAt: string;
+}
+
 export interface RideDetail {
-  ride: Record<string, unknown>;
+  ride: RideFull;
   track_geojson: string;
+}
+
+// 軌跡 GeoJSON（GET /api/admin/rides/:id 回傳的 track_geojson 字串 parse 後的形狀）
+export interface RideTrackGeoJSON {
+  type: 'Feature';
+  properties: { ride_id: number };
+  geometry: {
+    type: 'LineString';
+    coordinates: [number, number][]; // [lng, lat]
+  };
 }
 
 // ---- 端點 ----

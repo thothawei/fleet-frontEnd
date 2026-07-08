@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, Select, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -12,6 +13,7 @@ const statusOptions = [
 ];
 
 export default function OrdersPage() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<number>(-1);
   const { data: rides = [], isLoading } = useQuery({
     queryKey: ['rides', status],
@@ -59,6 +61,10 @@ export default function OrdersPage() {
         dataSource={rides}
         pagination={{ pageSize: 20 }}
         size="middle"
+        onRow={(record) => ({
+          onClick: () => navigate(`/orders/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
       />
     </Card>
   );
