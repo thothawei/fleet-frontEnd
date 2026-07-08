@@ -1,14 +1,24 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { Spin } from 'antd';
 
 import AppLayout from './components/AppLayout';
 import { isLoggedIn } from './auth/auth';
-import LoginPage from './pages/LoginPage';
-import FleetPage from './pages/FleetPage';
-import OrdersPage from './pages/OrdersPage';
-import OrderDetailPage from './pages/OrderDetailPage';
-import DriversPage from './pages/DriversPage';
-import ReportsPage from './pages/ReportsPage';
+
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const FleetPage = lazy(() => import('./pages/FleetPage'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
+const DriversPage = lazy(() => import('./pages/DriversPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+
+function PageLoader() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+      <Spin size="large" />
+    </div>
+  );
+}
 
 // 受保護路由：未登入導回 /login
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -17,22 +27,24 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        element={
-          <RequireAuth>
-            <AppLayout />
-          </RequireAuth>
-        }
-      >
-        <Route path="/" element={<FleetPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/orders/:id" element={<OrderDetailPage />} />
-        <Route path="/drivers" element={<DriversPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          element={
+            <RequireAuth>
+              <AppLayout />
+            </RequireAuth>
+          }
+        >
+          <Route path="/" element={<FleetPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/orders/:id" element={<OrderDetailPage />} />
+          <Route path="/drivers" element={<DriversPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }

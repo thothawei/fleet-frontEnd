@@ -7,7 +7,7 @@ import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined } from '@ant-desig
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { fetchRideDetail, type RideTrackGeoJSON } from '../api/admin';
+import { fetchRideDetail, parseTrackCoordinates } from '../api/admin';
 import { RIDE_STATUS } from '../constants';
 
 // 免付費 key 的 OSM raster 圖磚（與 FleetPage 相同寫法）
@@ -44,16 +44,10 @@ export default function OrderDetailPage() {
     enabled: Number.isFinite(rideId),
   });
 
-  const track = useMemo<RideTrackGeoJSON | null>(() => {
-    if (!data?.track_geojson) return null;
-    try {
-      return JSON.parse(data.track_geojson) as RideTrackGeoJSON;
-    } catch {
-      return null;
-    }
-  }, [data]);
-
-  const coordinates = useMemo(() => track?.geometry?.coordinates ?? [], [track]);
+  const coordinates = useMemo(
+    () => (data?.track_geojson ? parseTrackCoordinates(data.track_geojson) : []),
+    [data],
+  );
 
   const mapRef = useRef<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -84,10 +78,15 @@ export default function OrderDetailPage() {
     if (!map || coordinates.length === 0) return;
 
     const drawTrack = () => {
+      const lineFeature: GeoJSON.Feature = {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates },
+      };
       if (map.getSource(TRACK_SOURCE_ID)) {
-        (map.getSource(TRACK_SOURCE_ID) as maplibregl.GeoJSONSource).setData(track as GeoJSON.Feature);
+        (map.getSource(TRACK_SOURCE_ID) as maplibregl.GeoJSONSource).setData(lineFeature);
       } else {
-        map.addSource(TRACK_SOURCE_ID, { type: 'geojson', data: track as GeoJSON.Feature });
+        map.addSource(TRACK_SOURCE_ID, { type: 'geojson', data: lineFeature });
         map.addLayer({
           id: TRACK_LAYER_ID,
           type: 'line',
@@ -116,7 +115,7 @@ export default function OrderDetailPage() {
     } else {
       map.once('load', drawTrack);
     }
-  }, [track, coordinates]);
+  }, [coordinates]);
 
   // 播放：以 timer 沿座標陣列移動 marker
   useEffect(() => {
@@ -166,7 +165,7 @@ export default function OrderDetailPage() {
   }
 
   const { ride } = data;
-  const statusMeta = RIDE_STATUS[ride.Status] ?? { label: String(ride.Status), color: 'default' };
+  const statusMeta = RIDE_STATUS[ride.status] ?? { label: String(ride.status), color: 'default' };
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
@@ -174,35 +173,35 @@ export default function OrderDetailPage() {
         返回訂單列表
       </Button>
 
-      <Card title={`訂單 #${ride.ID}`}>
+      <Card title={`訂單 #${ride.id}`}>
         <Descriptions
           bordered
           size="small"
           column={2}
           items={[
             { key: 'status', label: '狀態', children: <Tag color={statusMeta.color}>{statusMeta.label}</Tag> },
-            { key: 'customer', label: '乘客 ID', children: ride.CustomerID },
-            { key: 'driver', label: '司機 ID', children: ride.DriverID ?? '—' },
-            { key: 'distance', label: '里程(m)', children: ride.DistanceM ?? '—' },
-            { key: 'pickup_addr', label: '上車地址', children: ride.PickupAddress || '—' },
+            { key: 'customer', label: '乘客 ID', children: ride.customer_id },
+            { key: 'driver', label: '司機 ID', children: ride.driver_id ?? '—' },
+            { key: 'distance', label: '里程(m)', children: ride.distance_m ?? '—' },
+            { key: 'pickup_addr', label: '上車地址', children: ride.pickup_address || '—' },
             {
               key: 'pickup_point',
               label: '上車座標',
-              children: `${ride.PickupPoint.Lat.toFixed(6)}, ${ride.PickupPoint.Lng.toFixed(6)}`,
+              children: `${ride.pickup_point.lat.toFixed(6)}, ${ride.pickup_point.lng.toFixed(6)}`,
             },
-            { key: 'dropoff_addr', label: '下車地址', children: ride.DropoffAddress || '—' },
+            { key: 'dropoff_addr', label: '下車地址', children: ride.dropoff_address || '—' },
             {
               key: 'dropoff_point',
               label: '下車座標',
-              children: ride.DropoffPoint
-                ? `${ride.DropoffPoint.Lat.toFixed(6)}, ${ride.DropoffPoint.Lng.toFixed(6)}`
+              children: ride.dropoff_point
+                ? `${ride.dropoff_point.lat.toFixed(6)}, ${ride.dropoff_point.lng.toFixed(6)}`
                 : '—',
             },
-            { key: 'requested_at', label: '叫車時間', children: fmtTime(ride.RequestedAt) },
-            { key: 'accepted_at', label: '接單時間', children: fmtTime(ride.AcceptedAt) },
-            { key: 'picked_up_at', label: '上車時間', children: fmtTime(ride.PickedUpAt) },
-            { key: 'completed_at', label: '完成時間', children: fmtTime(ride.CompletedAt) },
-            { key: 'eta', label: '預估接客秒數', children: ride.EtaPickupSec ?? '—' },
+            { key: 'requested_at', label: '叫車時間', children: fmtTime(ride.requested_at) },
+            { key: 'accepted_at', label: '接單時間', children: fmtTime(ride.accepted_at) },
+            { key: 'picked_up_at', label: '上車時間', children: fmtTime(ride.picked_up_at) },
+            { key: 'completed_at', label: '完成時間', children: fmtTime(ride.completed_at) },
+            { key: 'eta', label: '預估接客秒數', children: ride.eta_pickup_sec ?? '—' },
           ]}
         />
       </Card>

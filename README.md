@@ -160,4 +160,4 @@ VITE_WS_BASE=wss://api.example.com
 
 **已完成（本次 scaffold）**：登入、受保護路由、Ant Design 版面、即時車隊地圖、訂單/司機列表、日報表，全部串接後端 API/WS。`npm run build` 通過。
 
-**待辦**：訂單詳情 + 軌跡回放（GeoJSON 畫在地圖，後端 `GET /rides/:id` 已具備）、司機審核啟用/停用（需後端補寫入端點）、派單參數設定、單元/元件測試、bundle code-splitting。
+**待辦**：司機審核啟用/停用（需後端補寫入端點）、派單參數設定、視覺驗證、CI。訂單詳情 + 軌跡回放、路由 code-splitting、關鍵頁測試（`npm test`）已完成。

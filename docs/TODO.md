@@ -7,7 +7,8 @@
 ## 現況
 
 - 已完成頁面：登入、即時車隊地圖（MapLibre+WS）、訂單列表、訂單詳情+軌跡回放、司機列表、日報表。
-- 全部**唯讀**；無測試；無 code-splitting；視覺未截圖驗證。
+- 全部**唯讀**；Vitest 已覆蓋登入/訂單列表/詳情 + API 工具；路由 lazy import 已拆包；視覺未截圖驗證。
+- 2026-07-08 修復：訂單詳情 Ride 欄位 snake_case 正規化、軌跡 GeoJSON 兼容 LineString/Feature。
 
 ## 待補強
 
@@ -16,8 +17,7 @@
 - [ ] C3. 派單參數設定頁 —— **依賴後端 D3**（`GET/PUT /api/admin/settings/dispatch`：逾時秒數、
       搜尋半徑、節流門檻，現為 env/常數）。
 - [ ] （後端 P2 一併考慮）後台強制取消訂單按鈕 —— 依賴 `POST /api/admin/rides/:id/cancel`。
-- [ ] C4a. 前端測試：關鍵頁 component 測試（登入、訂單列表、詳情）。目前 `src/` 無任何測試、
-      package.json 無 test script。
-- [ ] C4b. bundle code-splitting：路由層 lazy import（現單包 >500KB，`App.tsx` 無 lazy）。
+- [ ] C4a. ~~前端測試~~ ✅ Vitest + Testing Library（`npm test`）：`admin.test.ts`（parseTrack/normalizeRide）、`LoginPage`、`OrdersPage`、`OrderDetailPage`。
+- [ ] C4b. ~~bundle code-splitting~~ ✅ 路由 lazy import（`App.tsx` Suspense + dynamic import）。
 - [ ] C5. 視覺驗證：用瀏覽器/preview 實際載入各頁截圖確認渲染（含 OrderDetailPage 軌跡回放）。
 - [ ] CI：`tsc -b && vite build` + lint 的 pipeline（跨 repo 項 E2）。
