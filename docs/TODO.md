@@ -57,23 +57,23 @@
   - 腳本：`npm run visual:verify`（Playwright 載入 6 頁截圖）
   - 證據：`docs/screenshots/c5-2026-07-08/`（6/6 通過 + `report.json`）
   - 修復：FleetPage / OrderDetailPage 地圖容器 loading 期間未掛載導致 MapLibre 永不初始化
-- [ ] **補 FleetPage 測試** — mock MapLibre + WS，驗證快照載入與位置更新
+- [x] **補 FleetPage 測試** — `FleetPage.test.tsx`
 - [x] **補 DriversPage 測試** — 列表渲染、啟停 Switch mutation
-- [ ] **補 ReportsPage 測試** — 日期選擇、表格資料
-- [ ] **補 useFleetSocket 測試** — `driver.location` 解析、斷線狀態
-- [ ] **補 auth.ts / client.ts 測試** — token 存取、401 interceptor
-- [ ] **Coverage script** — `vitest --coverage` + 可選 CI 門檻（`@vitest/coverage-v8` 已安裝）
+- [x] **補 ReportsPage 測試** — `ReportsPage.test.tsx`
+- [x] **補 useFleetSocket 測試** — `useFleetSocket.test.tsx` + `fleetSocketUtils.test.ts`
+- [x] **補 auth.ts / client.ts 測試** — `auth.test.ts`、`client.test.ts`
+- [x] **Coverage script** — `npm run test:coverage`
 
 ### 3.2 WebSocket 韌性
 
-- [ ] **斷線自動重連** — 指數退避；`useFleetSocket` effect 依賴 token
-- [ ] **Heartbeat / ping-pong** — 偵測僵死連線
-- [ ] **連線錯誤提示** — 除 Badge 外，加 Alert 或 Toast
+- [x] **斷線自動重連** — 指數退避 + token 依賴（`useFleetSocket`）
+- [x] **Heartbeat** — 依後端 writePump WebSocket ping
+- [x] **連線錯誤提示** — FleetPage Alert + Badge 重連狀態
 
 ### 3.3 認證體驗
 
-- [ ] **Token 過期處理** — 解析 JWT `exp` 或依 401 統一登出（現只檢查 token 是否存在）
-- [ ] **已登入導向** — 進入 `/login` 時若已登入，自動導回首頁
+- [ ] **Token 過期處理** — JWT exp 解析待做（401 interceptor 已有）
+- [x] **已登入導向** — LoginPage 已登入自動導回首頁
 - [ ] **登出確認** — 可選，避免誤觸
 
 ### 3.4 訂單瀏覽增強
@@ -81,28 +81,28 @@
 - [ ] **列表分頁/載入更多** — 現 `limit=100` 硬編碼，無 offset；後端若支援再串
 - [ ] **日期範圍篩選** — 依 `requested_at` 篩選
 - [ ] **關鍵字搜尋** — 上車點地址、訂單 ID
-- [ ] **顯示 completed_at** — 型別已有，列表未顯示
-- [ ] **詳情頁麵包屑** — 訂單管理 > #123
-- [ ] **空列表 Empty 狀態** — OrdersPage / DriversPage
+- [x] **顯示 completed_at** — OrdersPage 新增欄位
+- [x] **詳情頁麵包屑** — OrderDetailPage Breadcrumb
+- [x] **空列表 Empty 狀態** — OrdersPage / DriversPage locale
 
 ### 3.5 車隊地圖增強
 
-- [ ] **Marker popup 資訊** — 司機姓名、狀態、最後更新時間（需 fleet API 或 drivers 快取對照）
+- [x] **Marker popup 資訊** — 姓名、狀態、更新時間
 - [ ] **點擊司機連動** — 導向司機列表或詳情
-- [ ] **共用 Map 元件** — FleetPage / OrderDetailPage 的 `MAP_STYLE`、初始化邏輯去重
-- [ ] **地圖視野** — 依司機點位自動 fitBounds，或記住上次視野
+- [x] **共用 Map 元件** — `src/components/mapStyle.ts`
+- [x] **地圖視野** — fitBounds 依司機點位
 
 ### 3.6 司機管理增強
 
-- [ ] **normalizeDriver** — 兼容 PascalCase/snake_case（比照 `normalizeRide`）
+- [x] **normalizeDriver** — `fetchDrivers` 兼容 PascalCase/snake_case
 - [ ] **搜尋/篩選** — 姓名、電話、狀態
 - [ ] **司機詳情頁** — `/drivers/:id`（後端若有單筆端點再串；否則用列表資料）
 
 ### 3.7 報表增強
 
-- [ ] **全站摘要列** — 總趟數、總里程合計
+- [x] **全站摘要列** — ReportsPage 合計趟數/里程
 - [ ] **匯出 CSV** — 前端產生，不需後端
-- [ ] **API 錯誤 Alert** — 明確錯誤 UI（現依賴 React Query 預設）
+- [x] **API 錯誤 Alert** — ReportsPage
 
 ### 3.8 UI/UX 通用
 
@@ -110,7 +110,7 @@
 - [ ] **全域 Error Boundary** — 避免白屏
 - [ ] **統一錯誤處理層** — axios / Query 錯誤訊息一致化
 - [x] **側欄「設定」入口** — C3 SettingsPage `/settings`
-- [ ] **響應式地圖高度** — 現固定 600/500px
+- [x] **響應式地圖高度** — `min(600px, 70vh)` / `min(500px, 60vh)`
 - [ ] **README 版本校正** — 文件寫 Ant Design v5 / React 18，`package.json` 為 antd ^6 / React ^19
 
 ---
