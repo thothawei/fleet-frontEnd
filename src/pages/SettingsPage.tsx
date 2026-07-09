@@ -8,6 +8,7 @@ import {
   updateDispatchSettings,
   type DispatchSettings,
 } from '../api/admin';
+import { canDispatch } from '../auth/auth';
 
 const FIELD_RULES = {
   radius_m: { min: 100, max: 50000, label: '搜尋半徑（公尺）' },
@@ -91,7 +92,12 @@ export default function SettingsPage() {
           );
         })}
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={mutation.isPending}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={mutation.isPending}
+            disabled={!canDispatch()}
+          >
             儲存
           </Button>
         </Form.Item>

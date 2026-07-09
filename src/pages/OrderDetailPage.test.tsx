@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 
 import OrderDetailPage from './OrderDetailPage';
+import { setRole } from '../auth/auth';
 import { renderWithProviders } from '../test/render';
 
 const mockFetchRideDetail = vi.fn();
@@ -170,6 +171,40 @@ describe('OrderDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /強制取消/ })).toBeInTheDocument();
     });
+  });
+
+  it('viewer 角色時強制取消按鈕停用', async () => {
+    setRole('viewer');
+    mockFetchRideDetail.mockResolvedValue({
+      ride: {
+        id: 2,
+        customer_id: 10,
+        driver_id: 2,
+        status: 1,
+        pickup_point: { lat: 25.034, lng: 121.566 },
+        pickup_address: '台北101',
+        dropoff_point: null,
+        dropoff_address: '',
+        requested_at: '2026-07-06T14:53:13+08:00',
+        accepted_at: null,
+        picked_up_at: null,
+        completed_at: null,
+        distance_m: null,
+        eta_pickup_sec: 100,
+        created_at: '2026-07-06T14:53:13+08:00',
+        updated_at: '2026-07-06T14:53:13+08:00',
+      },
+      track_geojson: '{"type":"LineString","coordinates":[]}',
+      events: [],
+    });
+
+    renderWithProviders(<OrderDetailPage />, { route: '/orders/2', path: '/orders/:id' });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /強制取消/ })).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /強制取消/ })).toBeDisabled();
   });
 
   it('已完成訂單不顯示強制取消', async () => {

@@ -2,13 +2,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Modal, message, Breadcrumb, Timeline } from 'antd';
+import { Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Modal, message, Breadcrumb, Timeline, Tooltip } from 'antd';
 import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined, StopOutlined } from '@ant-design/icons';
 import type { AxiosError } from 'axios';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { cancelRideByAdmin, fetchRideDetail, parseTrackCoordinates } from '../api/admin';
+import { canDispatch } from '../auth/auth';
 import { actorRoleLabel, isRideCancellable, RIDE_STATUS, rideEventLabel } from '../constants';
 
 import { DEFAULT_MAP_CENTER, MAP_HEIGHT, MAP_STYLE } from '../components/mapStyle';
@@ -201,14 +202,17 @@ export default function OrderDetailPage() {
           返回訂單列表
         </Button>
         {canCancel && (
-          <Button
-            danger
-            icon={<StopOutlined />}
-            loading={cancelMutation.isPending}
-            onClick={confirmCancel}
-          >
-            強制取消
-          </Button>
+          <Tooltip title={canDispatch() ? '' : '權限不足'}>
+            <Button
+              danger
+              icon={<StopOutlined />}
+              loading={cancelMutation.isPending}
+              disabled={!canDispatch()}
+              onClick={confirmCancel}
+            >
+              強制取消
+            </Button>
+          </Tooltip>
         )}
       </Space>
 

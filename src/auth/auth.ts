@@ -34,3 +34,9 @@ export function clearSession(): void {
 export function isLoggedIn(): boolean {
   return !!getToken();
 }
+
+// dispatcher 以上（含 superadmin）才能執行寫入操作；viewer 僅唯讀。
+// 後端仍會用 403 強制把關，此處僅用於前端 UX 降級（禁用按鈕、提示原因）。
+export function canDispatch(): boolean {
+  return ['dispatcher', 'superadmin'].includes(getRole());
+}

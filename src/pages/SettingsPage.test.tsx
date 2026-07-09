@@ -3,6 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import SettingsPage from './SettingsPage';
+import { setRole } from '../auth/auth';
 import { renderWithProviders } from '../test/render';
 
 const mockFetchDispatchSettings = vi.fn();
@@ -19,6 +20,7 @@ vi.mock('../api/admin', async () => {
 
 describe('SettingsPage', () => {
   beforeEach(() => {
+    setRole('dispatcher'); // 儲存按鈕需 dispatcher 以上權限才可操作，見 Task 13
     mockFetchDispatchSettings.mockReset();
     mockUpdateDispatchSettings.mockReset();
     mockFetchDispatchSettings.mockResolvedValue({
@@ -66,5 +68,16 @@ describe('SettingsPage', () => {
         rate_limit_per_min: 5,
       });
     });
+  });
+
+  it('viewer 角色時儲存按鈕停用', async () => {
+    setRole('viewer');
+    renderWithProviders(<SettingsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('3000')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /儲\s*存/ })).toBeDisabled();
   });
 });

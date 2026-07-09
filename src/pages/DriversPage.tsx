@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, Modal, Switch, Table, Tag, message } from 'antd';
+import { Card, Modal, Switch, Table, Tag, Tooltip, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { AxiosError } from 'axios';
 
 import { fetchDrivers, patchDriverStatus, type Driver } from '../api/admin';
+import { canDispatch } from '../auth/auth';
 import { DRIVER_STATUS, DRIVER_STATUS_DISABLED } from '../constants';
 
 function apiError(err: unknown, fallback: string): string {
@@ -64,15 +65,20 @@ export default function DriversPage() {
     {
       title: '帳號',
       width: 100,
-      render: (_: unknown, driver: Driver) => (
-        <Switch
-          checked={driver.Status !== DRIVER_STATUS_DISABLED}
-          loading={mutation.isPending && mutation.variables?.id === driver.ID}
-          checkedChildren="啟用"
-          unCheckedChildren="停用"
-          onChange={(checked) => toggleEnabled(driver, checked)}
-        />
-      ),
+      render: (_: unknown, driver: Driver) => {
+        const canWrite = canDispatch();
+        const control = (
+          <Switch
+            checked={driver.Status !== DRIVER_STATUS_DISABLED}
+            loading={mutation.isPending && mutation.variables?.id === driver.ID}
+            checkedChildren="啟用"
+            unCheckedChildren="停用"
+            disabled={!canWrite}
+            onChange={(checked) => toggleEnabled(driver, checked)}
+          />
+        );
+        return canWrite ? control : <Tooltip title="權限不足">{control}</Tooltip>;
+      },
     },
   ];
 

@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { clearSession, getAdminName, getRole, getToken, isLoggedIn, saveSession, setRole } from './auth';
+import {
+  canDispatch,
+  clearSession,
+  getAdminName,
+  getRole,
+  getToken,
+  isLoggedIn,
+  saveSession,
+  setRole,
+} from './auth';
 
 describe('auth', () => {
   beforeEach(() => {
@@ -31,5 +40,19 @@ describe('auth', () => {
     saveSession('t', '管理員', 'viewer');
     setRole('superadmin');
     expect(getRole()).toBe('superadmin');
+  });
+
+  it('canDispatch：viewer 為 false，dispatcher/superadmin 為 true，未登入為 false', () => {
+    setRole('viewer');
+    expect(canDispatch()).toBe(false);
+
+    setRole('dispatcher');
+    expect(canDispatch()).toBe(true);
+
+    setRole('superadmin');
+    expect(canDispatch()).toBe(true);
+
+    localStorage.clear();
+    expect(canDispatch()).toBe(false);
   });
 });

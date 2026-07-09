@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 
 import DriversPage from './DriversPage';
+import { setRole } from '../auth/auth';
 import { renderWithProviders } from '../test/render';
 
 const mockFetchDrivers = vi.fn();
@@ -31,5 +32,16 @@ describe('DriversPage', () => {
     expect(screen.getByText('待命')).toBeInTheDocument();
     expect(screen.getByRole('switch')).toBeInTheDocument();
     expect(mockFetchDrivers).toHaveBeenCalled();
+  });
+
+  it('viewer 角色時帳號 Switch 停用', async () => {
+    setRole('viewer');
+    renderWithProviders(<DriversPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('煙霧測試司機')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('switch')).toBeDisabled();
   });
 });
