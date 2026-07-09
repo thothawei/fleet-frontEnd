@@ -259,3 +259,38 @@ export async function cancelRideByAdmin(id: number): Promise<string> {
   const { data } = await api.post<{ message: string }>(`/admin/rides/${id}/cancel`);
   return data.message;
 }
+
+// ---- RBAC 帳號管理（D6）----
+
+export type AdminUser = {
+  id: number;
+  username: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+};
+
+export async function fetchMe(): Promise<{ id: number; username: string; role: string }> {
+  const { data } = await api.get('/admin/me');
+  return data as { id: number; username: string; role: string };
+}
+
+export async function listAdmins(): Promise<AdminUser[]> {
+  const { data } = await api.get('/admin/admins');
+  return data.admins as AdminUser[];
+}
+
+export async function createAdmin(input: {
+  username: string;
+  password: string;
+  role: string;
+}): Promise<void> {
+  await api.post('/admin/admins', input);
+}
+
+export async function updateAdmin(
+  id: number,
+  patch: { role?: string; password?: string; is_active?: boolean },
+): Promise<void> {
+  await api.patch(`/admin/admins/${id}`, patch);
+}

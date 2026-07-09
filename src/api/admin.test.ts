@@ -3,11 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from './client';
 import {
   cancelRideByAdmin,
+  createAdmin,
   fetchDispatchSettings,
+  fetchMe,
   fetchRideDetail,
+  listAdmins,
   normalizeDriver,
   parseTrackCoordinates,
   patchDriverStatus,
+  updateAdmin,
   updateDispatchSettings,
 } from './admin';
 
@@ -245,5 +249,68 @@ describe('P2 admin write APIs', () => {
     const msg = await cancelRideByAdmin(9);
     expect(api.post).toHaveBeenCalledWith('/admin/rides/9/cancel');
     expect(msg).toBe('已取消');
+  });
+});
+
+describe('RBAC admin APIs', () => {
+  beforeEach(() => {
+    vi.mocked(api.get).mockReset();
+    vi.mocked(api.post).mockReset();
+    vi.mocked(api.patch).mockReset();
+    vi.mocked(api.put).mockReset();
+  });
+
+  it('fetchMe 回傳含 role 的當前登入者資訊', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { id: 1, username: 'admin1', role: 'superadmin' },
+    });
+    const me = await fetchMe();
+    expect(api.get).toHaveBeenCalledWith('/admin/me');
+    expect(me.role).toBe('superadmin');
+    expect(me.id).toBe(1);
+    expect(me.username).toBe('admin1');
+  });
+
+  it('listAdmins 解出 data.admins 為 AdminUser[]', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        admins: [
+          {
+            id: 1,
+            username: 'admin1',
+            role: 'superadmin',
+            is_active: true,
+            created_at: '2026-07-01T00:00:00+08:00',
+          },
+        ],
+      },
+    });
+    const admins = await listAdmins();
+    expect(api.get).toHaveBeenCalledWith('/admin/admins');
+    expect(admins).toEqual([
+      {
+        id: 1,
+        username: 'admin1',
+        role: 'superadmin',
+        is_active: true,
+        created_at: '2026-07-01T00:00:00+08:00',
+      },
+    ]);
+  });
+
+  it('createAdmin 呼叫 POST /admin/admins', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: {} });
+    await createAdmin({ username: 'newadmin', password: 'pw123456', role: 'dispatcher' });
+    expect(api.post).toHaveBeenCalledWith('/admin/admins', {
+      username: 'newadmin',
+      password: 'pw123456',
+      role: 'dispatcher',
+    });
+  });
+
+  it('updateAdmin 呼叫 PATCH /admin/admins/:id', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ data: {} });
+    await updateAdmin(2, { is_active: false });
+    expect(api.patch).toHaveBeenCalledWith('/admin/admins/2', { is_active: false });
   });
 });
