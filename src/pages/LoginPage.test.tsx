@@ -39,7 +39,7 @@ describe('LoginPage', () => {
   });
 
   it('登入成功後儲存 session 並導向首頁', async () => {
-    mockLogin.mockResolvedValue({ admin_id: 1, name: '管理員', token: 'tok-abc' });
+    mockLogin.mockResolvedValue({ admin_id: 1, name: '管理員', token: 'tok-abc', role: 'superadmin' });
     const user = userEvent.setup();
 
     renderWithProviders(<LoginPage />);
@@ -49,7 +49,7 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('admin', 'secret');
-      expect(mockSaveSession).toHaveBeenCalledWith('tok-abc', '管理員');
+      expect(mockSaveSession).toHaveBeenCalledWith('tok-abc', '管理員', 'superadmin');
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
   });

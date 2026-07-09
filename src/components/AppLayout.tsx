@@ -1,8 +1,8 @@
-import { BarChartOutlined, CarOutlined, DashboardOutlined, LogoutOutlined, OrderedListOutlined, SettingOutlined } from '@ant-design/icons';
+import { BarChartOutlined, CarOutlined, DashboardOutlined, LogoutOutlined, OrderedListOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
 import { Layout, Menu, Typography, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-import { clearSession, getAdminName } from '../auth/auth';
+import { clearSession, getAdminName, getRole } from '../auth/auth';
 
 const { Header, Sider, Content } = Layout;
 
@@ -23,6 +23,12 @@ export default function AppLayout() {
     navigate('/login');
   };
 
+  // 使用者管理僅 superadmin 可見（後端亦有對應權限檢查）
+  const items =
+    getRole() === 'superadmin'
+      ? [...menuItems, { key: '/users', icon: <TeamOutlined />, label: '使用者管理' }]
+      : menuItems;
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider theme="dark" breakpoint="lg" collapsedWidth="0">
@@ -33,7 +39,7 @@ export default function AppLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          items={menuItems}
+          items={items}
           onClick={({ key }) => navigate(key)}
         />
       </Sider>

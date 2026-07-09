@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const resp = await login(values.username, values.password);
-      saveSession(resp.token, resp.name);
+      saveSession(resp.token, resp.name, resp.role);
       navigate('/');
     } catch {
       message.error('登入失敗，請確認帳號密碼');

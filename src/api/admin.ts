@@ -6,6 +6,7 @@ export interface LoginResp {
   admin_id: number;
   name: string;
   token: string;
+  role: string;
 }
 
 export interface DriverLoc {
