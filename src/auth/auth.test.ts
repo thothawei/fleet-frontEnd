@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { clearSession, getAdminName, getToken, isLoggedIn, saveSession } from './auth';
+import { clearSession, getAdminName, getRole, getToken, isLoggedIn, saveSession, setRole } from './auth';
 
 describe('auth', () => {
   beforeEach(() => {
@@ -20,5 +20,16 @@ describe('auth', () => {
     expect(getToken()).toBeNull();
     expect(isLoggedIn()).toBe(false);
     expect(getAdminName()).toBe('管理員');
+  });
+
+  it('saveSession 存 role、getRole 取回', () => {
+    saveSession('t', '管理員', 'dispatcher');
+    expect(getRole()).toBe('dispatcher');
+  });
+
+  it('setRole 覆寫 role', () => {
+    saveSession('t', '管理員', 'viewer');
+    setRole('superadmin');
+    expect(getRole()).toBe('superadmin');
   });
 });
