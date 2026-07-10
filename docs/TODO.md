@@ -158,6 +158,17 @@
 5. 產品化項（RBAC、審計、E2E、部署）
 ```
 
+## 已知問題
+
+- **`SettingsPage.test.tsx`「載入並顯示派單參數表單」在 CI 上會間歇性失敗**
+  （run 29093888915：`Unable to find an element with the display value: 3000`；
+  同一份程式在下一個 commit 的 run 29099639715 又全綠）。
+  本機重跑多次、把 `fetchDispatchSettings` 延遲 150ms 後仍無法重現，**機制尚未查明**。
+  排除的假設：不是 `waitFor` 只等標題造成的 race——`SettingsPage` 在 `isLoading`
+  時只渲染 `<Spin>`，標題出現時資料必定已到。
+  待查方向：antd `InputNumber` 的顯示值是否在 CI 的 Node/ICU 下被格式化成 `3,000`。
+  在查明前**不要**用「加 waitFor」之類的盲改掩蓋它——那只會讓紅燈更難重現。
+
 ## 下次任務
 
 1. **後端補訂單查詢 API**（擋住前端真分頁）：`GET /api/admin/rides` 目前只有 `status`＋`limit`
