@@ -7,6 +7,7 @@ import { fetchMe } from './api/admin';
 import { getRole, isLoggedIn, setRole } from './auth/auth';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const FleetPage = lazy(() => import('./pages/FleetPage'));
 const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
@@ -78,7 +79,8 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route path="/" element={<FleetPage />} />
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/fleet" element={<FleetPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/drivers" element={<DriversPage />} />
