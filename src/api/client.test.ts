@@ -7,10 +7,12 @@ vi.mock('../config', () => ({ API_BASE: '' }));
 
 const mockGetToken = vi.fn(() => 'test-jwt');
 const mockClearSession = vi.fn();
+const mockIsTokenExpired = vi.fn(() => false);
 
 vi.mock('../auth/auth', () => ({
   getToken: () => mockGetToken(),
   clearSession: () => mockClearSession(),
+  isTokenExpired: (...args: unknown[]) => mockIsTokenExpired(...(args as [])),
 }));
 
 describe('api client', () => {
@@ -19,6 +21,7 @@ describe('api client', () => {
   beforeEach(() => {
     mockGetToken.mockReturnValue('test-jwt');
     mockClearSession.mockClear();
+    mockIsTokenExpired.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -51,6 +54,22 @@ describe('api client', () => {
     });
 
     await expect(api.get('/admin/rides')).rejects.toBeTruthy();
+    expect(mockClearSession).toHaveBeenCalled();
+    expect(window.location.href).toBe('/login');
+  });
+
+  it('token 已過期：request 直接被擋下，不送出請求', async () => {
+    mockIsTokenExpired.mockReturnValue(true);
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/orders', href: '' },
+      writable: true,
+    });
+
+    const adapter = vi.fn();
+    api.defaults.adapter = adapter;
+
+    await expect(api.get('/admin/rides')).rejects.toThrow('登入已過期，請重新登入');
+    expect(adapter).not.toHaveBeenCalled();
     expect(mockClearSession).toHaveBeenCalled();
     expect(window.location.href).toBe('/login');
   });

@@ -6,10 +6,18 @@ import {
   getAdminName,
   getRole,
   getToken,
+  getTokenExpiry,
   isLoggedIn,
+  isTokenExpired,
   saveSession,
   setRole,
 } from './auth';
+
+/** 組一個只有 payload 有意義的假 JWT（不簽章，前端本來就只解析不驗簽） */
+function fakeJwt(payload: Record<string, unknown>): string {
+  const b64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_');
+  return `header.${b64}.signature`;
+}
 
 describe('auth', () => {
   beforeEach(() => {
@@ -54,5 +62,46 @@ describe('auth', () => {
 
     localStorage.clear();
     expect(canDispatch()).toBe(false);
+  });
+});
+
+describe('JWT 過期處理', () => {
+  const future = Math.floor(Date.now() / 1000) + 3600;
+  const past = Math.floor(Date.now() / 1000) - 1;
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('getTokenExpiry 解析 exp', () => {
+    expect(getTokenExpiry(fakeJwt({ exp: future }))).toBe(future);
+  });
+
+  it('無法解析的 token 回 null，且不算過期', () => {
+    expect(getTokenExpiry('tok-abc')).toBeNull();
+    expect(getTokenExpiry('a.!!!not-base64!!!.c')).toBeNull();
+    expect(getTokenExpiry(fakeJwt({ sub: 1 }))).toBeNull();
+    expect(getTokenExpiry(null)).toBeNull();
+
+    expect(isTokenExpired('tok-abc')).toBe(false);
+    expect(isTokenExpired(fakeJwt({ sub: 1 }))).toBe(false);
+  });
+
+  it('isTokenExpired 依 exp 判斷', () => {
+    expect(isTokenExpired(fakeJwt({ exp: future }))).toBe(false);
+    expect(isTokenExpired(fakeJwt({ exp: past }))).toBe(true);
+  });
+
+  it('isLoggedIn 遇到過期 token 回 false 並清掉 session', () => {
+    saveSession(fakeJwt({ exp: past }), '管理員', 'viewer');
+    expect(isLoggedIn()).toBe(false);
+    expect(getToken()).toBeNull();
+    expect(getRole()).toBe('');
+  });
+
+  it('isLoggedIn 對未過期 token 維持登入', () => {
+    saveSession(fakeJwt({ exp: future }), '管理員', 'viewer');
+    expect(isLoggedIn()).toBe(true);
+    expect(getToken()).not.toBeNull();
   });
 });

@@ -6,6 +6,7 @@ import zhTW from 'antd/locale/zh_TW';
 import { BrowserRouter } from 'react-router-dom';
 
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 import { antdTheme } from './theme/tokens';
 import './index.css';
 
@@ -17,9 +18,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ConfigProvider locale={zhTW} theme={antdTheme}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ErrorBoundary>
       </ConfigProvider>
     </QueryClientProvider>
   </StrictMode>,

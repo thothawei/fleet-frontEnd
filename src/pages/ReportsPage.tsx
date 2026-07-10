@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Card, DatePicker, Empty, Table } from 'antd';
+import { Alert, Button, Card, DatePicker, Empty, Space, Table } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
 
 import { fetchDailyReport, type DailyReportRow } from '../api/admin';
 import PageHeader from '../components/PageHeader';
+import { downloadCsv, toCsv } from '../utils/csv';
 
 export default function ReportsPage() {
   const [date, setDate] = useState<Dayjs>(dayjs());
@@ -23,6 +25,20 @@ export default function ReportsPage() {
     }),
     [rows],
   );
+
+  function handleExport() {
+    const csv = toCsv(
+      ['司機ID', '司機', '趟數', '總里程(km)', '平均接客(分)'],
+      rows.map((r) => [
+        r.driver_id,
+        r.driver_name,
+        r.trip_count,
+        (r.total_distance_m / 1000).toFixed(2),
+        (r.avg_pickup_sec / 60).toFixed(1),
+      ]),
+    );
+    downloadCsv(`日報表-${dateStr}.csv`, csv);
+  }
 
   const columns: ColumnsType<DailyReportRow> = [
     { title: '司機', dataIndex: 'driver_name' },
@@ -45,7 +61,14 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="日報表"
-        extra={<DatePicker value={date} onChange={(d) => d && setDate(d)} allowClear={false} />}
+        extra={
+          <Space>
+            <DatePicker value={date} onChange={(d) => d && setDate(d)} allowClear={false} />
+            <Button icon={<DownloadOutlined />} disabled={rows.length === 0} onClick={handleExport}>
+              匯出 CSV
+            </Button>
+          </Space>
+        }
       />
       <Card>
       {isError && (

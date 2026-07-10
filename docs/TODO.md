@@ -10,9 +10,10 @@
 
 | 面向 | 狀態 |
 |---|---|
-| 核心瀏覽 | ✅ 登入、營運總覽 Dashboard、即時車隊地圖、訂單列表/詳情+軌跡回放、司機列表、日報表 |
+| 核心瀏覽 | ✅ 登入、營運總覽 Dashboard、即時車隊地圖、訂單列表/詳情+軌跡回放（含日期／關鍵字篩選）、司機列表、日報表（可匯出 CSV） |
 | 寫入操作 | ✅ 司機啟停、派單參數、強制取消（2026-07-08） |
-| 測試 | ✅ 17 測試檔／59 tests（含 Dashboard／tokens） |
+| 韌性 | ✅ 全域 Error Boundary、JWT `exp` 主動登出（2026-07-10） |
+| 測試 | ✅ 19 測試檔／76 tests（含 Dashboard／tokens／csv／ErrorBoundary） |
 | CI | ✅ lint + test + build（`.github/workflows/ci.yml`）；2026-07-10 修好 `npm ci` ERESOLVE |
 | 視覺驗收 | ✅ C5（2026-07-08）＋ UI/UX 翻新腳本已對齊新路由（`docs/screenshots/ux-2026-07-10/`） |
 
@@ -72,15 +73,21 @@
 
 ### 3.3 認證體驗
 
-- [ ] **Token 過期處理** — JWT exp 解析待做（401 interceptor 已有）
+- [x] **Token 過期處理**（2026-07-10）— `auth.ts` 解析 JWT `exp`（只解析不驗簽）：
+  `isLoggedIn()` 遇過期 token 清 session；`client.ts` request interceptor 過期即攔下不送出；
+  `RequireAuth` 依 `exp` 排到期鬧鐘（delay clamp 到 2^31-1，否則 setTimeout 溢位變立即觸發），
+  處理「停在頁面上不發請求、沒有 401 可觸發登出」的情境。
 - [x] **已登入導向** — LoginPage 已登入自動導回首頁
 - [ ] **登出確認** — 可選，避免誤觸
 
 ### 3.4 訂單瀏覽增強
 
-- [ ] **列表分頁/載入更多** — 現 `limit=100` 硬編碼，無 offset；後端若支援再串
-- [ ] **日期範圍篩選** — 依 `requested_at` 篩選
-- [ ] **關鍵字搜尋** — 上車點地址、訂單 ID
+- [ ] **列表分頁/載入更多** — **仍被後端擋住**：`RideRepository.ListRecent(status, limit)`
+      只吃 status + limit，沒有 offset（`repository.go:505`）。要真分頁得先開後端 API。
+- [x] **日期範圍篩選**（2026-07-10）— 依 `requested_at` 前端篩選（RangePicker）
+- [x] **關鍵字搜尋**（2026-07-10）— 上車點地址、訂單 ID
+  > 兩者都是 client-side 過濾**已載入的最近 100 筆**，頁面上有明文提示；
+  > 後端補 offset／查詢參數後再改成伺服器端篩選。
 - [x] **顯示 completed_at** — OrdersPage 新增欄位
 - [x] **詳情頁麵包屑** — OrderDetailPage Breadcrumb
 - [x] **空列表 Empty 狀態** — OrdersPage / DriversPage locale
@@ -101,7 +108,8 @@
 ### 3.7 報表增強
 
 - [x] **全站摘要列** — ReportsPage 合計趟數/里程
-- [ ] **匯出 CSV** — 前端產生，不需後端
+- [x] **匯出 CSV**（2026-07-10）— `src/utils/csv.ts`（RFC 4180 逸出 + UTF-8 BOM 防 Excel 亂碼），
+      ReportsPage 匯出鈕；無資料時停用
 - [x] **API 錯誤 Alert** — ReportsPage
 
 ### 3.8 UI/UX 通用
@@ -111,7 +119,8 @@
 - [x] **側欄／登入頁品牌化** — 亮色側欄 logo 區、登入頁漸層卡片（2026-07-10）
 - [x] **統一 PageHeader＋表格空狀態** — Orders／Drivers／Reports（2026-07-10）
 - [ ] **Skeleton 載入** — 取代部分 `<Spin>` 全頁遮罩（Dashboard 已用 Skeleton）
-- [ ] **全域 Error Boundary** — 避免白屏
+- [x] **全域 Error Boundary**（2026-07-10）— `components/ErrorBoundary.tsx` 掛在 `main.tsx`
+      的 ConfigProvider 內、BrowserRouter 外；顯示 antd Result + 重新載入／回首頁
 - [ ] **統一錯誤處理層** — axios / Query 錯誤訊息一致化
 - [x] **側欄「設定」入口** — C3 SettingsPage `/settings`
 - [x] **響應式地圖高度** — `min(600px, 70vh)` / `min(500px, 60vh)`
@@ -151,10 +160,12 @@
 
 ## 下次任務
 
-1. **Token 過期處理**：解析 JWT `exp`，過期前導向登入（目前只有 401 interceptor 被動處理）。
-2. **訂單瀏覽三件套**：列表分頁／載入更多（現 `limit=100` 硬編、後端無 offset，需先確認 API）、
-   日期範圍篩選、關鍵字搜尋。
-3. **匯出 CSV**（純前端，不需後端）與**全域 Error Boundary**（避免白屏）。
+1. **後端補訂單查詢 API**（擋住前端真分頁）：`GET /api/admin/rides` 目前只有 `status`＋`limit`
+   （`internal/repository/repository.go:505` 的 `ListRecent`）。需要 `offset`／日期區間／關鍵字，
+   前端才能從「client-side 過濾最近 100 筆」升級為伺服器端查詢。
+2. **統一錯誤處理層**：axios / React Query 的錯誤訊息一致化（Error Boundary 只接得住 render 期例外，
+   接不住事件處理器與非同步 callback）。
+3. **Skeleton 載入**：把剩下的 `<Spin>` 全頁遮罩換成 Skeleton（Dashboard 已是）。
 4. 三個 repo 的 main 都該開 branch protection——2026-07-10 發現後端與後台各自帶著紅燈 CI
    連推數個 commit（詳見 `line-fleet-dispatch/docs/decisions.md`）。
 
@@ -173,6 +184,21 @@
 | 2026-07-10 | UI/UX 翻新（Admin） | ✅ | tokens／Dashboard／layout／login／PageHeader；59 tests + build + lint |
 | 2026-07-10 | CI 修復（ERESOLVE） | ✅ | `@vitest/coverage-v8@^4` 的 peer 要 vitest@4，專案是 v3 → `npm ci` 失敗，CI 已紅 4 個 commit。降 coverage 到 ^3.2.7；npm ci + lint + 59 tests + build + coverage 全過 |
 | 2026-07-10 | README 版本校正 | ✅ | React 19 / AntD v6 / Vite 8 |
+| 2026-07-10 | 前端四小項（Token 過期／CSV／Error Boundary／訂單篩選） | ✅ | lint + tsc + 76 tests + build 全綠；再以 Playwright 對真後端跑 15 項真瀏覽器驗收（見下） |
+
+### 2026-07-10 真瀏覽器驗收（Playwright + 後端 docker）
+
+登入 admin/admin，對 `docker compose` 起的真後端（5 筆訂單、1 筆已完成）逐項實跑，15/15 通過：
+
+- **Token 過期**：後端真 token 確實帶 `exp`；塞入過期 JWT 後進 `/orders` → 導回 `/login`，
+  且 localStorage token 已清除。
+- **訂單篩選**：關鍵字「火車」5→1 筆、訂單 ID「3」→1 筆、清空後還原 5 筆；
+  日期範圍 07-11~07-12 → 0 筆（Empty），07-10~07-10 → 5 筆。
+- **CSV 匯出**：下載檔名 `日報表-2026-07-10.csv`，開頭有 UTF-8 BOM，
+  表頭 `司機ID,司機,趟數,總里程(km),平均接客(分)`、資料列 `1,煙霧測試司機,1,0.00,0.0`。
+- **Error Boundary**：暫時讓 ReportsPage 拋錯 → 畫面顯示「頁面發生錯誤」＋重新載入鈕（非白屏），
+  驗證完已還原。此項單元測試涵蓋不到 `main.tsx` 的掛載位置，故特地實跑。
+- 全程無未攔截的 page error。
 
 ---
 

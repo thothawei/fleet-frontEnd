@@ -31,8 +31,41 @@ export function clearSession(): void {
   localStorage.removeItem(ROLE_KEY);
 }
 
+/**
+ * 取出 JWT payload 的 `exp`（秒）。
+ *
+ * 只解析、不驗簽——簽章仍由後端把關；前端拿 exp 僅為了在過期前主動導回登入，
+ * 避免使用者在畫面上操作半天才被 401 打斷。
+ * 非三段式 JWT、base64 壞掉、或沒有 exp 時回 null（視同不過期，交給後端 401）。
+ */
+export function getTokenExpiry(token: string | null = getToken()): number | null {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64)) as { exp?: unknown };
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/** token 是否已過期。無 token、或無法解析出 exp 時皆回 false（不主動登出）。 */
+export function isTokenExpired(token: string | null = getToken()): boolean {
+  const exp = getTokenExpiry(token);
+  if (exp === null) return false;
+  return exp * 1000 <= Date.now();
+}
+
 export function isLoggedIn(): boolean {
-  return !!getToken();
+  const token = getToken();
+  if (!token) return false;
+  if (isTokenExpired(token)) {
+    clearSession();
+    return false;
+  }
+  return true;
 }
 
 // dispatcher 以上（含 superadmin）才能執行寫入操作；viewer 僅唯讀。

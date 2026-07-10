@@ -4,7 +4,7 @@ import { Spin } from 'antd';
 
 import AppLayout from './components/AppLayout';
 import { fetchMe } from './api/admin';
-import { getRole, isLoggedIn, setRole } from './auth/auth';
+import { getRole, getTokenExpiry, isLoggedIn, setRole } from './auth/auth';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -40,9 +40,22 @@ export function RequireRole({ min, children }: { min: string; children: ReactNod
  * `fetchMe()` 補 role，並在補齊前顯示 loading——避免 `getRole()` 暫時為空
  * 導致下層 `RequireRole` 誤判權限不足而導回首頁（race condition）。
  * fetchMe 失敗時仍放行，交由後端與 RequireRole 把關。
+ *
+ * 另外依 JWT `exp` 排一個到期鬧鐘：使用者停在頁面上不發任何請求時，
+ * 沒有 401 可以觸發登出，靠這個 timer 在 token 過期當下導回登入。
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const [roleReady, setRoleReady] = useState(() => !isLoggedIn() || !!getRole());
+  const [, setExpiredTick] = useState(0);
+
+  useEffect(() => {
+    const exp = getTokenExpiry();
+    if (exp === null) return;
+    // setTimeout 的 delay 超過 2^31-1 會溢位成立即觸發，需 clamp
+    const delay = Math.max(0, Math.min(exp * 1000 - Date.now(), 2 ** 31 - 1));
+    const timer = setTimeout(() => setExpiredTick((n) => n + 1), delay);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (roleReady) return;

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, Empty, Select, Table, Tag } from 'antd';
+import { Card, DatePicker, Empty, Input, Select, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import type { Dayjs } from 'dayjs';
 
 import { fetchRides, type RideRow } from '../api/admin';
 import PageHeader from '../components/PageHeader';
@@ -17,13 +18,32 @@ function fmtTime(t: string | null): string {
   return t ? new Date(t).toLocaleString('zh-TW') : '—';
 }
 
+/** 後端 `/admin/rides` 只吃 status + limit（無 offset／日期／關鍵字），故日期與搜尋在前端過濾。 */
+const RIDES_LIMIT = 100;
+
 export default function OrdersPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<number>(-1);
+  const [range, setRange] = useState<[Dayjs, Dayjs] | null>(null);
+  const [keyword, setKeyword] = useState('');
   const { data: rides = [], isLoading } = useQuery({
     queryKey: ['rides', status],
-    queryFn: () => fetchRides(status === -1 ? undefined : status),
+    queryFn: () => fetchRides(status === -1 ? undefined : status, RIDES_LIMIT),
   });
+
+  const filtered = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    return rides.filter((r) => {
+      if (range) {
+        const t = new Date(r.requested_at).getTime();
+        if (t < range[0].startOf('day').valueOf() || t > range[1].endOf('day').valueOf()) {
+          return false;
+        }
+      }
+      if (!kw) return true;
+      return String(r.id).includes(kw) || (r.pickup_address ?? '').toLowerCase().includes(kw);
+    });
+  }, [rides, range, keyword]);
 
   const columns: ColumnsType<RideRow> = [
     { title: '訂單', dataIndex: 'id', width: 80 },
@@ -63,15 +83,31 @@ export default function OrdersPage() {
       <PageHeader
         title="訂單管理"
         extra={
-          <Select value={status} options={statusOptions} onChange={setStatus} style={{ width: 140 }} />
+          <Space wrap>
+            <Input.Search
+              allowClear
+              placeholder="搜尋訂單 ID / 上車點"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              style={{ width: 220 }}
+            />
+            <DatePicker.RangePicker
+              value={range}
+              onChange={(v) => setRange(v && v[0] && v[1] ? [v[0], v[1]] : null)}
+            />
+            <Select value={status} options={statusOptions} onChange={setStatus} style={{ width: 140 }} />
+          </Space>
         }
       />
       <Card>
+      <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+        日期與關鍵字在最近 {RIDES_LIMIT} 筆訂單內篩選（後端尚未支援分頁查詢）。
+      </Typography.Text>
       <Table
         rowKey="id"
         loading={isLoading}
         columns={columns}
-        dataSource={rides}
+        dataSource={filtered}
         pagination={{ pageSize: 20, showTotal: (total) => `共 ${total} 筆` }}
         size="middle"
         locale={{ emptyText: <Empty description="目前沒有資料" /> }}
