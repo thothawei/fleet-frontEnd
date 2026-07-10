@@ -177,8 +177,10 @@
 2. **統一錯誤處理層**：axios / React Query 的錯誤訊息一致化（Error Boundary 只接得住 render 期例外，
    接不住事件處理器與非同步 callback）。
 3. **Skeleton 載入**：把剩下的 `<Spin>` 全頁遮罩換成 Skeleton（Dashboard 已是）。
-4. 三個 repo 的 main 都該開 branch protection——2026-07-10 發現後端與後台各自帶著紅燈 CI
-   連推數個 commit（詳見 `line-fleet-dispatch/docs/decisions.md`）。
+4. ~~三個 repo 的 main 都該開 branch protection~~ ✅ 2026-07-10 完成。本 repo 的 required check 是
+   `check`；`enforce_admins: true`，**不能再直推 main**，改走 `gh pr create` → 等 CI 綠 →
+   `gh pr merge --squash --delete-branch`。三個 repo 的設定詳見
+   `line-fleet-dispatch/docs/STATUS.md`「Git 工作流」。
 
 ---
 
