@@ -115,7 +115,7 @@
 - [ ] **統一錯誤處理層** — axios / Query 錯誤訊息一致化
 - [x] **側欄「設定」入口** — C3 SettingsPage `/settings`
 - [x] **響應式地圖高度** — `min(600px, 70vh)` / `min(500px, 60vh)`
-- [ ] **README 版本校正** — 文件寫 Ant Design v5 / React 18，`package.json` 為 antd ^6 / React ^19
+- [x] **README 版本校正** — 2026-07-10 改為 React 19 / AntD v6 / Vite 8，對齊 `package.json`
 
 ---
 

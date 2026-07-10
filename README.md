@@ -8,8 +8,8 @@
 
 | 類別 | 選型 |
 |---|---|
-| 框架 | React 18 + TypeScript + Vite |
-| UI | Ant Design v5（`locale=zh_TW`） |
+| 框架 | React 19 + TypeScript + Vite 8 |
+| UI | Ant Design v6（`locale=zh_TW`） |
 | 資料抓取 | TanStack Query + axios（JWT interceptor） |
 | 路由 | react-router-dom（受保護路由） |
 | 地圖 | MapLibre GL + OSM raster 圖磚（免付費 key） |
