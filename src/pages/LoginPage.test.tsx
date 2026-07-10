@@ -32,7 +32,7 @@ describe('LoginPage', () => {
 
   it('渲染登入表單', () => {
     renderWithProviders(<LoginPage />);
-    expect(screen.getByText('🚗 派遣後台登入')).toBeInTheDocument();
+    expect(screen.getByText('Fleet 派遣後台')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('帳號')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('密碼')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '登 入' })).toBeInTheDocument();
