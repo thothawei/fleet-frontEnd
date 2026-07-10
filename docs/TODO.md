@@ -13,7 +13,7 @@
 | 核心瀏覽 | ✅ 登入、營運總覽 Dashboard、即時車隊地圖、訂單列表/詳情+軌跡回放、司機列表、日報表 |
 | 寫入操作 | ✅ 司機啟停、派單參數、強制取消（2026-07-08） |
 | 測試 | ✅ 17 測試檔／59 tests（含 Dashboard／tokens） |
-| CI | ✅ lint + test + build（`.github/workflows/ci.yml`） |
+| CI | ✅ lint + test + build（`.github/workflows/ci.yml`）；2026-07-10 修好 `npm ci` ERESOLVE |
 | 視覺驗收 | ✅ C5（2026-07-08）＋ UI/UX 翻新腳本已對齊新路由（`docs/screenshots/ux-2026-07-10/`） |
 
 **一句話**：「看」已齊全；「管」核心寫入（C2/C3/強制取消）已串接 P2 API。
@@ -149,6 +149,15 @@
 5. 產品化項（RBAC、審計、E2E、部署）
 ```
 
+## 下次任務
+
+1. **Token 過期處理**：解析 JWT `exp`，過期前導向登入（目前只有 401 interceptor 被動處理）。
+2. **訂單瀏覽三件套**：列表分頁／載入更多（現 `limit=100` 硬編、後端無 offset，需先確認 API）、
+   日期範圍篩選、關鍵字搜尋。
+3. **匯出 CSV**（純前端，不需後端）與**全域 Error Boundary**（避免白屏）。
+4. 三個 repo 的 main 都該開 branch protection——2026-07-10 發現後端與後台各自帶著紅燈 CI
+   連推數個 commit（詳見 `line-fleet-dispatch/docs/decisions.md`）。
+
 ---
 
 ## 六、驗收紀錄
@@ -162,6 +171,8 @@
 | 2026-07-08 | C5 視覺驗證 | ✅ | 6/6 頁截圖通過；修復地圖初始化 bug |
 | 2026-07-08 | C2/C3/強制取消 | ✅ | 串接 P2 admin write APIs；21 tests pass |
 | 2026-07-10 | UI/UX 翻新（Admin） | ✅ | tokens／Dashboard／layout／login／PageHeader；59 tests + build + lint |
+| 2026-07-10 | CI 修復（ERESOLVE） | ✅ | `@vitest/coverage-v8@^4` 的 peer 要 vitest@4，專案是 v3 → `npm ci` 失敗，CI 已紅 4 個 commit。降 coverage 到 ^3.2.7；npm ci + lint + 59 tests + build + coverage 全過 |
+| 2026-07-10 | README 版本校正 | ✅ | React 19 / AntD v6 / Vite 8 |
 
 ---
 
