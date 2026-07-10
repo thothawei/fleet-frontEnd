@@ -41,6 +41,31 @@ export interface DailyReportRow {
   trip_count: number;
   total_distance_m: number;
   avg_pickup_sec: number;
+  // 金額欄位（分），後端 F5 起提供；顯示時除 100。
+  total_revenue_cents: number;
+  total_commission_cents: number;
+  driver_net_cents: number;
+}
+
+// 月營運報表每司機一列（後端 F6）。金額欄位為「分」。
+export interface MonthlyReportRow {
+  driver_id: number;
+  driver_name: string;
+  trip_count: number;
+  total_revenue_cents: number;
+  total_commission_cents: number;
+  driver_net_cents: number;
+  membership_fee_cents: number;
+  owed_to_hq_cents: number; // 應付總公司 = 手續費 + 月會費
+}
+
+// 費率設定（後端 F1/F4）。金額為「分」，手續費為基點 bps（1500 = 15%）。
+export interface FeeSettings {
+  base_fare_cents: number;
+  per_km_fare_cents: number;
+  min_fare_cents: number;
+  commission_bps: number;
+  monthly_membership_fee_cents: number;
 }
 
 // 對齊後端 model.GeoPoint（2026-07-08 後端補了 json tag，欄位改 snake_case）
@@ -229,6 +254,23 @@ export async function fetchDailyReport(date: string): Promise<DailyReportRow[]> 
     params: { date },
   });
   return data.drivers ?? [];
+}
+
+export async function fetchMonthlyReport(month: string): Promise<MonthlyReportRow[]> {
+  const { data } = await api.get<{ drivers: MonthlyReportRow[] }>('/admin/reports/monthly', {
+    params: { month },
+  });
+  return data.drivers ?? [];
+}
+
+export async function fetchFeeSettings(): Promise<FeeSettings> {
+  const { data } = await api.get<FeeSettings>('/admin/settings/fees');
+  return data;
+}
+
+export async function updateFeeSettings(body: Partial<FeeSettings>): Promise<FeeSettings> {
+  const { data } = await api.put<FeeSettings>('/admin/settings/fees', body);
+  return data;
 }
 
 export interface DispatchSettings {

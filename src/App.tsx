@@ -13,7 +13,9 @@ const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
 const DriversPage = lazy(() => import('./pages/DriversPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const MonthlyReportPage = lazy(() => import('./pages/MonthlyReportPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const FeeSettingsPage = lazy(() => import('./pages/FeeSettingsPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 
 function PageLoader() {
@@ -98,7 +100,16 @@ export default function App() {
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/drivers" element={<DriversPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/reports/monthly" element={<MonthlyReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route
+            path="/settings/fees"
+            element={
+              <RequireRole min="superadmin">
+                <FeeSettingsPage />
+              </RequireRole>
+            }
+          />
           <Route
             path="/users"
             element={

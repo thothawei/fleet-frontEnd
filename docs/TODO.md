@@ -248,19 +248,23 @@ CI 慢於本機，才會踩中這個時間差。
 
 ### 施作項目
 
-- [ ] **G1. 費率設定頁**（新路由 `/settings/fees`，或併入既有 `SettingsPage`）
-      表單：起步價、每公里費率、手續費%、月會費、最低車資。串後端 F4 兩個 API。
-      **RBAC**：僅 superadmin 可見入口與可提交（沿用既有角色判斷）。
-      側欄「設定」下加子入口。參考既有 `SettingsPage.tsx`（派單參數）的 GET/PUT 表單模式。
+> **實作進度（2026-07-11）**：G1–G3 已完成。tsc/oxlint/vite build 綠、Vitest 86 tests 全過
+> （新增 10 案：費率 API、月報表 API、`FeeSettingsPage`、`MonthlyReportPage`）。
+> 金額用 `src/utils/money.ts`（分↔元/CSV）；費率表單以元/%輸入、送出換算回分/bps。
+> **尚未做**：對 docker 後端的真瀏覽器 E2E（G1 改費率→reload、G2/G3 金額對帳）。
 
-- [ ] **G2. 日報表加金額欄位**（`ReportsPage.tsx` + `api/admin.ts`）
-      `DailyReportRow` 型別加 `total_revenue`、`total_commission`、`driver_net`；
-      表格加「營業額／手續費／司機實得」欄；摘要列與 CSV 匯出（`utils/csv.ts`）同步加欄。
+- [x] **G1. 費率設定頁** ✅（新路由 `/settings/fees`，`src/pages/FeeSettingsPage.tsx`）
+      表單：起步價/每公里/最低車資（元）、手續費（%）、月會費（元），串後端 F4。
+      RBAC：路由包 `RequireRole min="superadmin"`；側欄入口與儲存鈕僅 superadmin
+      （`auth.isSuperadmin()`）。表單值以元/%呈現，`toApi`/`toForm` 換算分/bps。
 
-- [ ] **G3. 月營運報表頁**（新路由 `/reports/monthly` 或報表頁分頁）
-      月切換（RangePicker/月選）→ 每司機一列：營業額、手續費、月會費、
-      **應付總公司**、司機實得；底部彙總合計。這是「司機營業狀況 + 付總公司多少」主畫面。
-      串後端 F6。CSV 匯出比照日報表。
+- [x] **G2. 日報表加金額欄位** ✅（`ReportsPage.tsx` + `api/admin.ts`）
+      `DailyReportRow` 加 `total_revenue_cents`/`total_commission_cents`/`driver_net_cents`；
+      表格加營業額/手續費/司機實得欄（右對齊、`fmtYuan`）；摘要列加營業額；CSV 加三欄。
+
+- [x] **G3. 月營運報表頁** ✅（新路由 `/reports/monthly`，`src/pages/MonthlyReportPage.tsx`）
+      月選（DatePicker picker="month"）→ 每司機營業額/手續費/月會費/**應付總公司**/司機實得，
+      Table.Summary 底部合計列；摘要 Alert；CSV 匯出。串後端 F6。側欄加「月報表」入口。
 
 ### 大資料量對應（前端）
 

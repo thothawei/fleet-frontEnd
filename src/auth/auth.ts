@@ -73,3 +73,8 @@ export function isLoggedIn(): boolean {
 export function canDispatch(): boolean {
   return ['dispatcher', 'superadmin'].includes(getRole());
 }
+
+// 費率／會費設定、帳號管理僅 superadmin。後端亦以 403 把關，此處僅用於前端 UX。
+export function isSuperadmin(): boolean {
+  return getRole() === 'superadmin';
+}
