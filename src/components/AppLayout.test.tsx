@@ -24,7 +24,9 @@ describe('AppLayout 選單分級', () => {
     renderWithProviders(<AppLayout />);
 
     // 先等 Sider 的 responsive breakpoint 副作用跑完，再斷言選單內容
-    expect(await screen.findByText('即時車隊')).toBeInTheDocument();
+    expect(await screen.findByText('營運總覽')).toBeInTheDocument();
+    expect(screen.getByText('即時車隊')).toBeInTheDocument();
+    expect(screen.getByText('Fleet 派遣後台')).toBeInTheDocument();
     expect(screen.queryByText('使用者管理')).not.toBeInTheDocument();
   });
 });

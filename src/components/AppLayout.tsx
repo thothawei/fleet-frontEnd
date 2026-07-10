@@ -1,13 +1,15 @@
-import { BarChartOutlined, CarOutlined, DashboardOutlined, LogoutOutlined, OrderedListOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
+import { BarChartOutlined, CarOutlined, DashboardOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
 import { Layout, Menu, Typography, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { clearSession, getAdminName, getRole } from '../auth/auth';
+import { BRAND_PRIMARY } from '../theme/tokens';
 
 const { Header, Sider, Content } = Layout;
 
 const menuItems = [
-  { key: '/', icon: <DashboardOutlined />, label: '即時車隊' },
+  { key: '/', icon: <DashboardOutlined />, label: '營運總覽' },
+  { key: '/fleet', icon: <EnvironmentOutlined />, label: '即時車隊' },
   { key: '/orders', icon: <OrderedListOutlined />, label: '訂單管理' },
   { key: '/drivers', icon: <CarOutlined />, label: '司機管理' },
   { key: '/reports', icon: <BarChartOutlined />, label: '日報表' },
@@ -29,22 +31,33 @@ export default function AppLayout() {
       ? [...menuItems, { key: '/users', icon: <TeamOutlined />, label: '使用者管理' }]
       : menuItems;
 
+  // /orders/:id 詳情頁時側欄仍高亮「訂單管理」
+  const selectedKey = location.pathname.startsWith('/orders') ? '/orders' : location.pathname;
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider theme="dark" breakpoint="lg" collapsedWidth="0">
-        <div style={{ color: '#fff', fontWeight: 600, fontSize: 18, padding: '16px 24px' }}>
-          🚗 派遣後台
+      <Sider theme="light" breakpoint="lg" collapsedWidth="0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '20px 24px' }}>
+          <span
+            style={{
+              width: 32, height: 32, borderRadius: 8, background: BRAND_PRIMARY,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+            }}
+          >
+            🚗
+          </span>
+          <Typography.Text strong>Fleet 派遣後台</Typography.Text>
         </div>
         <Menu
-          theme="dark"
           mode="inline"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[selectedKey]}
           items={items}
           onClick={({ key }) => navigate(key)}
+          style={{ borderInlineEnd: 'none' }}
         />
       </Sider>
       <Layout>
-        <Header style={{ background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingInline: 24 }}>
+        <Header style={{ background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingInline: 24, borderBottom: '1px solid #f0f0f0' }}>
           <Typography.Text strong>叫車派遣營運後台</Typography.Text>
           <span>
             <Typography.Text style={{ marginRight: 16 }}>{getAdminName()}</Typography.Text>
