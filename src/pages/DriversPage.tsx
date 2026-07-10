@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, Modal, Switch, Table, Tag, Tooltip, message } from 'antd';
+import { Card, Empty, Modal, Switch, Table, Tag, Tooltip, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { AxiosError } from 'axios';
 
 import { fetchDrivers, patchDriverStatus, type Driver } from '../api/admin';
+import PageHeader from '../components/PageHeader';
 import { canDispatch } from '../auth/auth';
 import { DRIVER_STATUS, DRIVER_STATUS_DISABLED } from '../constants';
 
@@ -83,7 +84,9 @@ export default function DriversPage() {
   ];
 
   return (
-    <Card title="司機管理">
+    <>
+      <PageHeader title="司機管理" />
+      <Card>
       <Table
         rowKey="ID"
         loading={isLoading}
@@ -91,8 +94,9 @@ export default function DriversPage() {
         dataSource={drivers}
         pagination={{ pageSize: 20, showTotal: (total) => `共 ${total} 位` }}
         size="middle"
-        locale={{ emptyText: '尚無司機' }}
+        locale={{ emptyText: <Empty description="目前沒有資料" /> }}
       />
-    </Card>
+      </Card>
+    </>
   );
 }

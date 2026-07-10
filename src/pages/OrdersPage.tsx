@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, Select, Table, Tag } from 'antd';
+import { Card, Empty, Select, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 import { fetchRides, type RideRow } from '../api/admin';
+import PageHeader from '../components/PageHeader';
 import { RIDE_STATUS } from '../constants';
 
 const statusOptions = [
   { value: -1, label: '全部狀態' },
   ...Object.entries(RIDE_STATUS).map(([k, v]) => ({ value: Number(k), label: v.label })),
 ];
-
-const tableLocale = { emptyText: '尚無訂單' };
 
 function fmtTime(t: string | null): string {
   return t ? new Date(t).toLocaleString('zh-TW') : '—';
@@ -60,12 +59,14 @@ export default function OrdersPage() {
   ];
 
   return (
-    <Card
-      title="訂單管理"
-      extra={
-        <Select value={status} options={statusOptions} onChange={setStatus} style={{ width: 140 }} />
-      }
-    >
+    <>
+      <PageHeader
+        title="訂單管理"
+        extra={
+          <Select value={status} options={statusOptions} onChange={setStatus} style={{ width: 140 }} />
+        }
+      />
+      <Card>
       <Table
         rowKey="id"
         loading={isLoading}
@@ -73,12 +74,13 @@ export default function OrdersPage() {
         dataSource={rides}
         pagination={{ pageSize: 20, showTotal: (total) => `共 ${total} 筆` }}
         size="middle"
-        locale={tableLocale}
+        locale={{ emptyText: <Empty description="目前沒有資料" /> }}
         onRow={(record) => ({
           onClick: () => navigate(`/orders/${record.id}`),
           style: { cursor: 'pointer' },
         })}
       />
-    </Card>
+      </Card>
+    </>
   );
 }

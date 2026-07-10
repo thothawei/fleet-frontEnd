@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Card, DatePicker, Table } from 'antd';
+import { Alert, Card, DatePicker, Empty, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
 
 import { fetchDailyReport, type DailyReportRow } from '../api/admin';
+import PageHeader from '../components/PageHeader';
 
 export default function ReportsPage() {
   const [date, setDate] = useState<Dayjs>(dayjs());
@@ -41,10 +42,12 @@ export default function ReportsPage() {
   ];
 
   return (
-    <Card
-      title="日報表"
-      extra={<DatePicker value={date} onChange={(d) => d && setDate(d)} allowClear={false} />}
-    >
+    <>
+      <PageHeader
+        title="日報表"
+        extra={<DatePicker value={date} onChange={(d) => d && setDate(d)} allowClear={false} />}
+      />
+      <Card>
       {isError && (
         <Alert type="error" message="日報表載入失敗，請稍後再試" showIcon style={{ marginBottom: 16 }} />
       )}
@@ -63,8 +66,9 @@ export default function ReportsPage() {
         dataSource={rows}
         pagination={false}
         size="middle"
-        locale={{ emptyText: '當日尚無行程紀錄' }}
+        locale={{ emptyText: <Empty description="目前沒有資料" /> }}
       />
-    </Card>
+      </Card>
+    </>
   );
 }
