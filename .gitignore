@@ -25,3 +25,6 @@ dist-ssr
 
 # 本機環境設定（不進版控，用 .env.example 當範本）
 .env
+
+# vitest coverage 報告（npm run test:coverage）
+coverage/
