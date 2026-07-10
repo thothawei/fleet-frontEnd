@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { message } from 'antd';
 
 import SettingsPage from './SettingsPage';
 import { setRole } from '../auth/auth';
@@ -39,6 +40,12 @@ describe('SettingsPage', () => {
     });
   });
 
+  // message.success 會開一個 3 秒自動關閉的 timer，不清掉的話 teardown 後才觸發，
+  // React 會在沒有 window 的環境重新排程 → vitest 報 unhandled ReferenceError 並 exit 1
+  afterEach(() => {
+    message.destroy();
+  });
+
   it('載入並顯示派單參數表單', async () => {
     renderWithProviders(<SettingsPage />);
 
@@ -46,7 +53,9 @@ describe('SettingsPage', () => {
       expect(screen.getByText('派單參數設定')).toBeInTheDocument();
     });
 
-    expect(screen.getByDisplayValue('3000')).toBeInTheDocument();
+    // 欄位值由 useEffect 的 form.setFieldsValue 回填，與標題不在同一次 commit，
+    // 標題出現不代表欄位已填 —— 要等欄位本身
+    expect(await screen.findByDisplayValue('3000')).toBeInTheDocument();
   });
 
   it('提交更新派單參數', async () => {
@@ -67,6 +76,13 @@ describe('SettingsPage', () => {
         max_attempts: 3,
         rate_limit_per_min: 5,
       });
+    });
+
+    // 等 onSuccess 完全跑完（訊息 portal + 表單回填），否則測試會在 React 還有
+    // 排程工作時就結束，那些工作會在測試環境拆除後才執行
+    expect(await screen.findByText('派單參數已更新')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('5000')).toBeInTheDocument();
     });
   });
 

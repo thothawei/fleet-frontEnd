@@ -158,16 +158,29 @@
 5. 產品化項（RBAC、審計、E2E、部署）
 ```
 
-## 已知問題
+## 已解決：SettingsPage 測試在 CI 上的間歇性紅燈（2026-07-10）
 
-- **`SettingsPage.test.tsx`「載入並顯示派單參數表單」在 CI 上會間歇性失敗**
-  （run 29093888915：`Unable to find an element with the display value: 3000`；
-  同一份程式在下一個 commit 的 run 29099639715 又全綠）。
-  本機重跑多次、把 `fetchDispatchSettings` 延遲 150ms 後仍無法重現，**機制尚未查明**。
-  排除的假設：不是 `waitFor` 只等標題造成的 race——`SettingsPage` 在 `isLoading`
-  時只渲染 `<Spin>`，標題出現時資料必定已到。
-  待查方向：antd `InputNumber` 的顯示值是否在 CI 的 Node/ICU 下被格式化成 `3,000`。
-  在查明前**不要**用「加 waitFor」之類的盲改掩蓋它——那只會讓紅燈更難重現。
+**症狀**：CI 上 `check` job 隨機轉紅（run 29093888915、29100547339），本機永遠綠。
+後者是一個「只改一個 markdown 檔」的 PR，證明與程式改動無關。
+
+**機制**：`76 tests 全過`，但 vitest 報 `Unhandled Errors → ReferenceError: window is not defined`
+（`react-dom` 的 `performWorkUntilDeadline`），來源是 `SettingsPage.test.tsx`，exit code 1。
+「提交更新派單參數」只等 `updateDispatchSettings` **被呼叫**就結束，但 mutation 的 `onSuccess`
+（`message.success` + `setFieldsValue` + `setQueryData`）在那之後才跑；`message.success` 還會開一個
+3 秒自動關閉的 timer。測試環境拆除後這些工作才執行，React 在沒有 `window` 的環境重新排程就爆。
+CI 慢於本機，才會踩中這個時間差。
+
+**證明**：在 `waitFor` 之後加探針斷言——`queryByDisplayValue('5000')` 已存在（`onSuccess` 的
+`setFieldsValue` 跑了）但 `queryByText('派單參數已更新')` 仍是 null（message portal 尚未渲染），
+確認測試結束時仍有未完成的 React 工作。
+
+**修法**：等 `onSuccess` 的可觀察結果（`findByText('派單參數已更新')` + 表單值變 `5000`），
+並在 `afterEach` 呼叫 `message.destroy()` 清掉 timer。另把第一個測試的
+`getByDisplayValue('3000')` 改成 `findByDisplayValue`——欄位由 `useEffect` 的 `setFieldsValue`
+回填，與標題不在同一次 commit，標題出現不代表欄位已填。
+
+> 這是 branch protection 上線第一天就攔下的紅燈：docs-only 的 PR #1 被 CI 擋住無法 merge。
+> 在此之前它已經讓 main 紅過一次而沒人擋。
 
 ## 下次任務
 
@@ -177,8 +190,10 @@
 2. **統一錯誤處理層**：axios / React Query 的錯誤訊息一致化（Error Boundary 只接得住 render 期例外，
    接不住事件處理器與非同步 callback）。
 3. **Skeleton 載入**：把剩下的 `<Spin>` 全頁遮罩換成 Skeleton（Dashboard 已是）。
-4. 三個 repo 的 main 都該開 branch protection——2026-07-10 發現後端與後台各自帶著紅燈 CI
-   連推數個 commit（詳見 `line-fleet-dispatch/docs/decisions.md`）。
+4. ~~三個 repo 的 main 都該開 branch protection~~ ✅ 2026-07-10 完成。本 repo 的 required check 是
+   `check`；`enforce_admins: true`，**不能再直推 main**，改走 `gh pr create` → 等 CI 綠 →
+   `gh pr merge --squash --delete-branch`。三個 repo 的設定詳見
+   `line-fleet-dispatch/docs/STATUS.md`「Git 工作流」。
 
 ---
 
