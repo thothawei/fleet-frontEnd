@@ -6,6 +6,7 @@ import zhTW from 'antd/locale/zh_TW';
 import { BrowserRouter } from 'react-router-dom';
 
 import App from './App';
+import { antdTheme } from './theme/tokens';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -15,7 +16,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider locale={zhTW}>
+      <ConfigProvider locale={zhTW} theme={antdTheme}>
         <BrowserRouter>
           <App />
         </BrowserRouter>

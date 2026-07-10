@@ -1,9 +1,9 @@
-// 訂單狀態（對齊後端 constants/ride.go）
+// 訂單狀態（對齊後端 constants/ride.go；tag 色對齊 spec §1.1 語意色）
 export const RIDE_STATUS: Record<number, { label: string; color: string }> = {
-  0: { label: '待派單', color: 'default' },
+  0: { label: '待派單', color: 'warning' },
   1: { label: '已派單', color: 'processing' },
   2: { label: '前往接客', color: 'blue' },
-  3: { label: '行程中', color: 'green' },
+  3: { label: '行程中', color: 'geekblue' },
   4: { label: '已完成', color: 'success' },
   9: { label: '已取消', color: 'error' },
 };
