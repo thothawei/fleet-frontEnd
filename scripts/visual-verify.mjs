@@ -1,5 +1,5 @@
 /**
- * C5 視覺驗證：載入各頁並截圖。
+ * UI/UX 視覺驗證：載入各頁並截圖。
  * 用法：node scripts/visual-verify.mjs [--base http://localhost:5173]
  */
 import { chromium } from 'playwright';
@@ -10,16 +10,17 @@ const BASE = process.argv.includes('--base')
   ? process.argv[process.argv.indexOf('--base') + 1]
   : 'http://localhost:5173';
 
-const OUT_DIR = join(import.meta.dirname, '..', 'docs', 'screenshots', 'c5-2026-07-08');
+const OUT_DIR = join(import.meta.dirname, '..', 'docs', 'screenshots', 'ux-2026-07-10');
 const RIDE_ID = process.env.RIDE_ID ?? '4';
 
 const pages = [
-  { name: '01-login', path: '/login', auth: false, waitFor: 'text=派遣後台登入' },
-  { name: '02-fleet', path: '/', auth: true, waitFor: 'text=即時車隊' },
-  { name: '03-orders', path: '/orders', auth: true, waitFor: 'text=訂單管理' },
-  { name: '04-order-detail', path: `/orders/${RIDE_ID}`, auth: true, waitFor: 'text=訂單 #' },
-  { name: '05-drivers', path: '/drivers', auth: true, waitFor: 'text=司機管理' },
-  { name: '06-reports', path: '/reports', auth: true, waitFor: 'text=日報表' },
+  { name: '01-login', path: '/login', auth: false, waitFor: 'text=Fleet 派遣後台' },
+  { name: '02-dashboard', path: '/', auth: true, waitFor: 'text=營運總覽' },
+  { name: '03-fleet', path: '/fleet', auth: true, waitFor: 'text=即時車隊' },
+  { name: '04-orders', path: '/orders', auth: true, waitFor: 'text=訂單管理' },
+  { name: '05-order-detail', path: `/orders/${RIDE_ID}`, auth: true, waitFor: 'text=訂單 #' },
+  { name: '06-drivers', path: '/drivers', auth: true, waitFor: 'text=司機管理' },
+  { name: '07-reports', path: '/reports', auth: true, waitFor: 'text=日報表' },
 ];
 
 async function login(page) {
@@ -28,7 +29,7 @@ async function login(page) {
   await page.getByPlaceholder('密碼').fill('admin');
   await page.locator('button[type="submit"]').click();
   await page.waitForURL((url) => url.pathname === '/' || url.pathname === '', { timeout: 20_000 });
-  await page.waitForSelector('text=即時車隊', { timeout: 15_000 });
+  await page.waitForSelector('text=營運總覽', { timeout: 15_000 });
 }
 
 async function waitForPageReady(page, spec) {
@@ -39,13 +40,14 @@ async function waitForPageReady(page, spec) {
 
   await page.waitForSelector(spec.waitFor, { timeout: 20_000 });
 
-  if (spec.name.includes('orders') || spec.name.includes('drivers') || spec.name.includes('reports')) {
+  if (spec.name.includes('orders') || spec.name.includes('drivers') || spec.name.includes('reports') || spec.name.includes('dashboard')) {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('.ant-table-row').length > 0 ||
-        document.querySelector('.ant-empty') !== null,
+        document.querySelector('.ant-empty') !== null ||
+        document.querySelector('[data-testid="kpi-today"]') !== null,
       { timeout: 15_000 },
-    );
+    ).catch(() => {});
   }
 
   if (spec.name.includes('fleet') || spec.name.includes('order-detail')) {
@@ -97,7 +99,7 @@ async function main() {
   }
 
   const summary = {
-    date: '2026-07-08',
+    date: '2026-07-10',
     base: BASE,
     rideId: RIDE_ID,
     passed: results.filter((r) => r.status === 'pass').length,

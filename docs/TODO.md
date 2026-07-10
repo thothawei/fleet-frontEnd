@@ -1,6 +1,6 @@
 # line-fleet-admin — 缺口清單
 
-> 建立：2026-07-08。最後盤點：2026-07-08（以程式碼實測為準）。
+> 建立：2026-07-08。最後盤點：2026-07-10（以程式碼實測為準）。
 > 編號沿用後端 repo 的 [gap-analysis-plan](../../line-fleet-dispatch/docs/2026-07-07-gap-analysis-plan.md)（C=後台前端、D=後端）。
 > 每完成一項：實跑驗收 → 勾選回填 → commit + push（main）。
 
@@ -10,11 +10,11 @@
 
 | 面向 | 狀態 |
 |---|---|
-| 核心瀏覽 | ✅ 登入、即時車隊地圖、訂單列表/詳情+軌跡回放、司機列表、日報表 |
+| 核心瀏覽 | ✅ 登入、營運總覽 Dashboard、即時車隊地圖、訂單列表/詳情+軌跡回放、司機列表、日報表 |
 | 寫入操作 | ✅ 司機啟停、派單參數、強制取消（2026-07-08） |
-| 測試 | 🟡 7 個測試檔；缺 Fleet/Reports/WS |
+| 測試 | ✅ 17 測試檔／59 tests（含 Dashboard／tokens） |
 | CI | ✅ lint + test + build（`.github/workflows/ci.yml`） |
-| 視覺驗收 | ✅ C5 完成（6/6 頁，`docs/screenshots/c5-2026-07-08/`） |
+| 視覺驗收 | ✅ C5（2026-07-08）＋ UI/UX 翻新腳本已對齊新路由（`docs/screenshots/ux-2026-07-10/`） |
 
 **一句話**：「看」已齊全；「管」核心寫入（C2/C3/強制取消）已串接 P2 API。
 
@@ -106,7 +106,11 @@
 
 ### 3.8 UI/UX 通用
 
-- [ ] **Skeleton 載入** — 取代部分 `<Spin>` 全頁遮罩
+- [x] **LINE 綠品牌主題** — `src/theme/tokens.ts` + ConfigProvider（2026-07-10）
+- [x] **營運總覽 Dashboard** — `/` KPI + 最近訂單；即時車隊移至 `/fleet`（2026-07-10）
+- [x] **側欄／登入頁品牌化** — 亮色側欄 logo 區、登入頁漸層卡片（2026-07-10）
+- [x] **統一 PageHeader＋表格空狀態** — Orders／Drivers／Reports（2026-07-10）
+- [ ] **Skeleton 載入** — 取代部分 `<Spin>` 全頁遮罩（Dashboard 已用 Skeleton）
 - [ ] **全域 Error Boundary** — 避免白屏
 - [ ] **統一錯誤處理層** — axios / Query 錯誤訊息一致化
 - [x] **側欄「設定」入口** — C3 SettingsPage `/settings`
@@ -157,6 +161,7 @@
 | 2026-07-08 | CI | ✅ | lint + test + build |
 | 2026-07-08 | C5 視覺驗證 | ✅ | 6/6 頁截圖通過；修復地圖初始化 bug |
 | 2026-07-08 | C2/C3/強制取消 | ✅ | 串接 P2 admin write APIs；21 tests pass |
+| 2026-07-10 | UI/UX 翻新（Admin） | ✅ | tokens／Dashboard／layout／login／PageHeader；59 tests + build + lint |
 
 ---
 

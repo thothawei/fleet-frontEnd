@@ -21,19 +21,23 @@
 src/
 ├── config.ts             # 後端位址（VITE_API_BASE / VITE_WS_BASE）
 ├── constants.ts          # 訂單/司機狀態對照（對齊後端 constants）
+├── theme/tokens.ts       # LINE 綠品牌 tokens + 狀態語意色（AntD ConfigProvider）
 ├── auth/auth.ts          # JWT token 存取（localStorage）
 ├── api/
 │   ├── client.ts         # axios 實例：自動帶 JWT、401 導回登入
 │   └── admin.ts          # /api/admin/* 端點函式 + 型別
 ├── ws/useFleetSocket.ts  # WS hook：driver.location 事件即時更新車隊
-├── components/AppLayout.tsx  # Ant Design 側欄版面
+├── components/
+│   ├── AppLayout.tsx     # 亮色側欄版面（營運總覽／即時車隊選單）
+│   └── PageHeader.tsx    # 全站統一頁面標題列
 ├── pages/
-│   ├── LoginPage.tsx     # POST /api/admin/login
-│   ├── FleetPage.tsx     # 即時車隊地圖（GET /fleet 快照 + WS 增量）
+│   ├── LoginPage.tsx     # POST /api/admin/login（品牌化登入）
+│   ├── DashboardPage.tsx # 營運總覽首頁 `/`（KPI + 最近訂單）
+│   ├── FleetPage.tsx     # 即時車隊地圖 `/fleet`（GET /fleet 快照 + WS 增量）
 │   ├── OrdersPage.tsx    # 訂單列表（GET /rides，可篩狀態）
 │   ├── DriversPage.tsx   # 司機列表（GET /drivers）
 │   └── ReportsPage.tsx   # 日報表（GET /reports/daily）
-└── App.tsx / main.tsx    # 路由 + QueryClient + AntD ConfigProvider
+└── App.tsx / main.tsx    # 路由 + QueryClient + AntD ConfigProvider（theme）
 ```
 
 ## 對接的後端端點（line-fleet-dispatch）
@@ -41,6 +45,7 @@ src/
 | 頁面 | 後端端點 |
 |---|---|
 | 登入 | `POST /api/admin/login` |
+| 營運總覽 | `GET /api/admin/rides` + `GET /api/admin/drivers` + `GET /api/admin/fleet`（組合 KPI） |
 | 即時車隊 | `GET /api/admin/fleet` + `GET /ws?token=`（`driver.location` 事件） |
 | 訂單管理 | `GET /api/admin/rides?status=&limit=` |
 | 司機管理 | `GET /api/admin/drivers` |
