@@ -68,8 +68,18 @@ describe('normalizeDriver', () => {
         Name: '司機A',
         Phone: '0912',
         Status: 1,
+        CreatedAt: '2026-07-11T13:09:08+08:00',
+        UpdatedAt: '2026-07-11T16:46:44+08:00',
       }),
-    ).toEqual({ ID: 1, LineUserID: 'line-1', Name: '司機A', Phone: '0912', Status: 1 });
+    ).toEqual({
+      ID: 1,
+      LineUserID: 'line-1',
+      Name: '司機A',
+      Phone: '0912',
+      Status: 1,
+      CreatedAt: '2026-07-11T13:09:08+08:00',
+      UpdatedAt: '2026-07-11T16:46:44+08:00',
+    });
 
     expect(
       normalizeDriver({
@@ -78,8 +88,24 @@ describe('normalizeDriver', () => {
         name: '司機B',
         phone: '',
         status: 3,
+        created_at: '2026-07-10T00:00:00Z',
+        updated_at: '2026-07-10T01:00:00Z',
       }),
-    ).toEqual({ ID: 2, LineUserID: 'line-2', Name: '司機B', Phone: '', Status: 3 });
+    ).toEqual({
+      ID: 2,
+      LineUserID: 'line-2',
+      Name: '司機B',
+      Phone: '',
+      Status: 3,
+      CreatedAt: '2026-07-10T00:00:00Z',
+      UpdatedAt: '2026-07-10T01:00:00Z',
+    });
+  });
+
+  it('缺時間欄位時回空字串', () => {
+    const d = normalizeDriver({ ID: 3, LineUserID: 'l', Name: 'C', Phone: '', Status: 0 });
+    expect(d.CreatedAt).toBe('');
+    expect(d.UpdatedAt).toBe('');
   });
 });
 

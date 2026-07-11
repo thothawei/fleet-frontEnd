@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Form, InputNumber, message, Spin } from 'antd';
-import type { AxiosError } from 'axios';
+import { Alert, Button, Card, Form, InputNumber, message, Skeleton } from 'antd';
 
 import { fetchFeeSettings, updateFeeSettings, type FeeSettings } from '../api/admin';
 import { isSuperadmin } from '../auth/auth';
+import { apiError } from '../utils/apiError';
 
 // 表單以「元 / %」為單位（對使用者友善），送出前換算回後端的「分 / bps」。
 interface FeeFormValues {
@@ -35,11 +35,6 @@ function toApi(v: FeeFormValues): Partial<FeeSettings> {
   };
 }
 
-function apiError(err: unknown, fallback: string): string {
-  const ax = err as AxiosError<{ error?: string }>;
-  return ax.response?.data?.error ?? fallback;
-}
-
 export default function FeeSettingsPage() {
   const [form] = Form.useForm<FeeFormValues>();
   const queryClient = useQueryClient();
@@ -65,10 +60,8 @@ export default function FeeSettingsPage() {
 
   if (isLoading) {
     return (
-      <Card>
-        <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Spin />
-        </div>
+      <Card title="費率設定">
+        <Skeleton active paragraph={{ rows: 6 }} />
       </Card>
     );
   }

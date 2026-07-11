@@ -22,6 +22,8 @@ export interface Driver {
   Name: string;
   Phone: string;
   Status: number; // 0=離線 1=待命 2=載客中
+  CreatedAt: string; // 後端回傳的 ISO 時間字串；缺值為空字串
+  UpdatedAt: string;
 }
 
 export interface RideRow {
@@ -160,6 +162,8 @@ export function normalizeDriver(raw: Record<string, unknown>): Driver {
     Name: str(raw, 'Name', 'name'),
     Phone: str(raw, 'Phone', 'phone'),
     Status: num(raw, 'Status', 'status'),
+    CreatedAt: str(raw, 'CreatedAt', 'created_at'),
+    UpdatedAt: str(raw, 'UpdatedAt', 'updated_at'),
   };
 }
 

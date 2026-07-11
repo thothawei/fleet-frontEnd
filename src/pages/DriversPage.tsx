@@ -1,25 +1,38 @@
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, Empty, Modal, Switch, Table, Tag, Tooltip, message } from 'antd';
+import { Card, Empty, Input, Modal, Select, Space, Switch, Table, Tag, Tooltip, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { AxiosError } from 'axios';
+import { Link } from 'react-router-dom';
 
 import { fetchDrivers, patchDriverStatus, type Driver } from '../api/admin';
 import PageHeader from '../components/PageHeader';
 import { canDispatch } from '../auth/auth';
 import { DRIVER_STATUS, DRIVER_STATUS_DISABLED } from '../constants';
+import { apiError } from '../utils/apiError';
 
-function apiError(err: unknown, fallback: string): string {
-  const ax = err as AxiosError<{ error?: string }>;
-  return ax.response?.data?.error ?? fallback;
-}
+const STATUS_OPTIONS = [
+  { value: 'all', label: '全部狀態' },
+  ...Object.entries(DRIVER_STATUS).map(([value, meta]) => ({ value, label: meta.label })),
+];
 
 export default function DriversPage() {
   const queryClient = useQueryClient();
+  const [keyword, setKeyword] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const { data: drivers = [], isLoading } = useQuery({
     queryKey: ['drivers'],
     queryFn: fetchDrivers,
   });
+
+  const filtered = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    return drivers.filter((d) => {
+      if (statusFilter !== 'all' && String(d.Status) !== statusFilter) return false;
+      if (!kw) return true;
+      return d.Name.toLowerCase().includes(kw) || d.Phone.toLowerCase().includes(kw);
+    });
+  }, [drivers, keyword, statusFilter]);
 
   const mutation = useMutation({
     mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
@@ -51,7 +64,13 @@ export default function DriversPage() {
 
   const columns: ColumnsType<Driver> = [
     { title: 'ID', dataIndex: 'ID', width: 80 },
-    { title: '姓名', dataIndex: 'Name' },
+    {
+      title: '姓名',
+      dataIndex: 'Name',
+      render: (name: string, driver: Driver) => (
+        <Link to={`/drivers/${driver.ID}`}>{name || `司機 #${driver.ID}`}</Link>
+      ),
+    },
     { title: '電話', dataIndex: 'Phone', render: (p: string) => p || '—' },
     { title: 'LINE User ID', dataIndex: 'LineUserID', ellipsis: true },
     {
@@ -87,14 +106,32 @@ export default function DriversPage() {
     <>
       <PageHeader title="司機管理" />
       <Card>
+      <Space wrap style={{ marginBottom: 16 }}>
+        <Input.Search
+          allowClear
+          placeholder="搜尋姓名或電話"
+          style={{ width: 240 }}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+        <Select
+          value={statusFilter}
+          style={{ width: 140 }}
+          options={STATUS_OPTIONS}
+          onChange={setStatusFilter}
+        />
+      </Space>
       <Table
         rowKey="ID"
         loading={isLoading}
         columns={columns}
-        dataSource={drivers}
+        dataSource={filtered}
         pagination={{ pageSize: 20, showTotal: (total) => `共 ${total} 位` }}
         size="middle"
-        locale={{ emptyText: <Empty description="目前沒有資料" /> }}
+        locale={{
+          emptyText: (
+            <Empty description={drivers.length ? '沒有符合條件的司機' : '目前沒有資料'} />
+          ),
+        }}
       />
       </Card>
     </>

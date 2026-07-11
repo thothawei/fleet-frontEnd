@@ -251,7 +251,8 @@ CI 慢於本機，才會踩中這個時間差。
 > **實作進度（2026-07-11）**：G1–G3 已完成。tsc/oxlint/vite build 綠、Vitest 86 tests 全過
 > （新增 10 案：費率 API、月報表 API、`FeeSettingsPage`、`MonthlyReportPage`）。
 > 金額用 `src/utils/money.ts`（分↔元/CSV）；費率表單以元/%輸入、送出換算回分/bps。
-> **尚未做**：對 docker 後端的真瀏覽器 E2E（G1 改費率→reload、G2/G3 金額對帳）。
+> **真瀏覽器 E2E ✅（2026-07-11，後端 docker）**：見下「驗收方式」——G1 費率 round-trip＋RBAC、
+> G2/G3 金額對帳、快照制皆通過。
 
 - [x] **G1. 費率設定頁** ✅（新路由 `/settings/fees`，`src/pages/FeeSettingsPage.tsx`）
       表單：起步價/每公里/最低車資（元）、手續費（%）、月會費（元），串後端 F4。
@@ -279,6 +280,20 @@ CI 慢於本機，才會踩中這個時間差。
 - G1：以 superadmin 登入改費率 → PUT 成功 → reload 值保留；非 superadmin 看不到入口（RBAC）。
 - G2/G3：對 docker 後端（含已完成行程）實跑，畫面金額與後端加總一致；CSV 欄位正確、UTF-8 BOM。
 - 沿用既有 Vitest：補 `ReportsPage`／設定頁的金額欄位與 RBAC 測試。
+
+**真瀏覽器 E2E 驗收 ✅（2026-07-11，Claude Browser + docker 後端，2 司機 3 完成行程）**：
+
+- **G1 費率頁**：superadmin 進 `/settings/fees`，值與後端一致（起步 NT$85←8500、每公里 NT$20←2000、
+  最低 NT$85←8500、手續費 15%←1500bps、月會費 NT$3000←300000）；改每公里 20→25 存檔 →
+  後端 `per_km_fare_cents` 變 2500（元→分正確）→ reload 仍顯示 25.00（持久化）→ 改回 20。
+- **快照制**：改費率期間，既有行程 #5（司機#2）月報表金額仍凍結 8500，不受 live 費率影響。
+- **RBAC**：建 viewer 帳號 → 後端費率 GET/PUT 皆 **403**；前端側欄無「費率／使用者」入口；
+  直接進 `/settings/fees` 被 `RequireRole` 導回營運總覽。
+- **G2 日報表**：司機#2 營業額 NT$85.00／手續費 NT$12.75／實得 NT$72.25，與後端 `reports/daily` 一致。
+- **G3 月報表**：司機#2 NT$85.00／NT$12.75／月會費 NT$3,000.00／應付總公司 NT$3,012.75／實得 NT$72.25，
+  流程司機（#1）NT$170.00／…／NT$3,025.50／NT$144.50，合計列加總正確；與後端 `reports/monthly` 逐欄一致。
+- **跨端對帳**：後端 `reports/monthly`（admin 來源）== `driver/earnings`（app 來源）逐欄相同 →
+  **app E1 ↔ admin G3 ↔ 後端 F6/F7 三端金額全對齊**。
 
 ---
 
