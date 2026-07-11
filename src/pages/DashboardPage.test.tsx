@@ -18,11 +18,16 @@ const today = new Date().toISOString();
 
 describe('DashboardPage', () => {
   beforeEach(() => {
-    mockFetchRides.mockReset().mockResolvedValue([
-      { id: 1, customer_id: 9, driver_id: 5, status: 4, pickup_address: '台北車站', requested_at: today, completed_at: today, distance_m: 1200 },
-      { id: 2, customer_id: 9, driver_id: 5, status: 2, pickup_address: '市政府', requested_at: today, completed_at: null, distance_m: null },
-      { id: 3, customer_id: 8, driver_id: null, status: 9, pickup_address: '松山機場', requested_at: today, completed_at: null, distance_m: null },
-    ]);
+    mockFetchRides.mockReset().mockResolvedValue({
+      rides: [
+        { id: 1, customer_id: 9, driver_id: 5, status: 4, pickup_address: '台北車站', requested_at: today, completed_at: today, distance_m: 1200 },
+        { id: 2, customer_id: 9, driver_id: 5, status: 2, pickup_address: '市政府', requested_at: today, completed_at: null, distance_m: null },
+        { id: 3, customer_id: 8, driver_id: null, status: 9, pickup_address: '松山機場', requested_at: today, completed_at: null, distance_m: null },
+      ],
+      total: 3,
+      limit: 200,
+      offset: 0,
+    });
     mockFetchDrivers.mockReset().mockResolvedValue([
       { ID: 1, LineUserID: 'l1', Name: '司機甲', Phone: '0911', Status: 1 },
       { ID: 2, LineUserID: 'l2', Name: '司機乙', Phone: '0912', Status: 0 },

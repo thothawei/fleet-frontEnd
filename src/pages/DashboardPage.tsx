@@ -33,7 +33,7 @@ const recentColumns = [
 ];
 
 export default function DashboardPage() {
-  const { data: rides = [], isLoading: ridesLoading } = useQuery({ queryKey: ['rides', 'dashboard'], queryFn: () => fetchRides(undefined, 200) });
+  const { data: rides = [], isLoading: ridesLoading } = useQuery({ queryKey: ['rides', 'dashboard'], queryFn: () => fetchRides({ limit: 200 }).then((r) => r.rides) });
   const { data: drivers = [], isLoading: driversLoading } = useQuery({ queryKey: ['drivers'], queryFn: fetchDrivers });
   const { data: fleet = [] } = useQuery({ queryKey: ['fleet'], queryFn: fetchFleet });
 

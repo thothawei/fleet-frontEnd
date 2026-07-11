@@ -82,12 +82,14 @@
 
 ### 3.4 訂單瀏覽增強
 
-- [ ] **列表分頁/載入更多** — **仍被後端擋住**：`RideRepository.ListRecent(status, limit)`
-      只吃 status + limit，沒有 offset（`repository.go:505`）。要真分頁得先開後端 API。
-- [x] **日期範圍篩選**（2026-07-10）— 依 `requested_at` 前端篩選（RangePicker）
-- [x] **關鍵字搜尋**（2026-07-10）— 上車點地址、訂單 ID
-  > 兩者都是 client-side 過濾**已載入的最近 100 筆**，頁面上有明文提示；
-  > 後端補 offset／查詢參數後再改成伺服器端篩選。
+- [x] **列表伺服器端分頁**（2026-07-11）— 後端 `GET /api/admin/rides` 已支援
+      `offset`／`from`／`to`／`q`／`limit` 並回 `total`（dispatch #2，已在 main）。
+      `fetchRides` 改吃 filter 物件、回 `{rides,total,limit,offset}`；OrdersPage 改為
+      **伺服器端分頁**（`pageSize=20`、`offset=(page-1)*20`），antd 分頁 `total` 用後端總數，
+      篩選變動回第 1 頁，`placeholderData: keepPreviousData` 換頁不閃。
+- [x] **日期範圍篩選**（2026-07-11 升級為伺服器端）— range → `from`/`to`（`requested_at`）送後端
+- [x] **關鍵字搜尋**（2026-07-11 升級為伺服器端）— 上車點地址／訂單 ID 送後端 `q`（打字 400ms 防抖）
+  > 原「client-side 過濾最近 100 筆」限制已解除：日期／關鍵字／分頁全部走後端查詢。
 - [x] **顯示 completed_at** — OrdersPage 新增欄位
 - [x] **詳情頁麵包屑** — OrderDetailPage Breadcrumb
 - [x] **空列表 Empty 狀態** — OrdersPage / DriversPage locale
@@ -184,12 +186,12 @@ CI 慢於本機，才會踩中這個時間差。
 
 ## 下次任務
 
-1. **後端補訂單查詢 API**（擋住前端真分頁）：`GET /api/admin/rides` 目前只有 `status`＋`limit`
-   （`internal/repository/repository.go:505` 的 `ListRecent`）。需要 `offset`／日期區間／關鍵字，
-   前端才能從「client-side 過濾最近 100 筆」升級為伺服器端查詢。
-2. **統一錯誤處理層**：axios / React Query 的錯誤訊息一致化（Error Boundary 只接得住 render 期例外，
-   接不住事件處理器與非同步 callback）。
-3. **Skeleton 載入**：把剩下的 `<Spin>` 全頁遮罩換成 Skeleton（Dashboard 已是）。
+1. ~~後端補訂單查詢 API + 前端伺服器端分頁~~ ✅ 2026-07-11。後端 `GET /api/admin/rides` 已支援
+   `offset`／`from`／`to`／`q`／`limit`＋回 `total`（dispatch #2）；前端 OrdersPage 已改伺服器端分頁／
+   日期／關鍵字查詢，解除「client-side 過濾最近 100 筆」限制。
+2. ~~統一錯誤處理層~~ ✅ 2026-07-11。抽共用 `src/utils/apiError.ts`（可分辨後端訊息／逾時／斷線／5xx），
+   取代 5 頁重複；補單元測試。（註：query 讀取錯誤各頁仍以既有 inline Alert 呈現，未加全域 toast 以免重複。）
+3. ~~Skeleton 載入~~ ✅ 2026-07-11。Settings／FeeSettings 全頁 `<Spin>` 改 Skeleton（Dashboard 早已是）。
 4. ~~三個 repo 的 main 都該開 branch protection~~ ✅ 2026-07-10 完成。本 repo 的 required check 是
    `check`；`enforce_admins: true`，**不能再直推 main**，改走 `gh pr create` → 等 CI 綠 →
    `gh pr merge --squash --delete-branch`。三個 repo 的設定詳見
@@ -272,8 +274,8 @@ CI 慢於本機，才會踩中這個時間差。
 > 報表大資料量的預防在後端（見 dispatch F9）。前端配合點：
 > - 月報表／日報表**依賴後端伺服器端聚合**（F5/F6 已是每司機一列，天然有界），勿在前端跨大量原始 rides 自行加總。
 > - 報表日期區間 UI 設**合理上限**（對齊後端 F9-4 的查詢跨度上限），避免使用者一次拉超大範圍打爆後端。
-> - 訂單逐筆列表改**伺服器端分頁**（待後端 `GET /api/admin/rides` 補 `offset`／日期區間，F9-5），
->   解掉現行「client-side 過濾最近 100 筆」的限制（見「3.4 訂單瀏覽增強」）。
+> - 訂單逐筆列表已改**伺服器端分頁** ✅（2026-07-11，後端 `GET /api/admin/rides` 的 `offset`／日期／`q`／`total`，
+>   對應 dispatch F9-5）；已解除「client-side 過濾最近 100 筆」限制（見「3.4 訂單瀏覽增強」）。
 
 ### 驗收方式
 
