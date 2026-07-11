@@ -1,4 +1,4 @@
-import { BarChartOutlined, CarOutlined, DashboardOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
+import { BarChartOutlined, CarOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, ScheduleOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
 import { Layout, Menu, Typography, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,7 @@ const menuItems = [
   { key: '/orders', icon: <OrderedListOutlined />, label: '訂單管理' },
   { key: '/drivers', icon: <CarOutlined />, label: '司機管理' },
   { key: '/reports', icon: <BarChartOutlined />, label: '日報表' },
+  { key: '/reports/monthly', icon: <ScheduleOutlined />, label: '月報表' },
   { key: '/settings', icon: <SettingOutlined />, label: '設定' },
 ];
 
@@ -25,10 +26,14 @@ export default function AppLayout() {
     navigate('/login');
   };
 
-  // 使用者管理僅 superadmin 可見（後端亦有對應權限檢查）
+  // 費率設定、使用者管理僅 superadmin 可見（後端亦有對應權限檢查）
   const items =
     getRole() === 'superadmin'
-      ? [...menuItems, { key: '/users', icon: <TeamOutlined />, label: '使用者管理' }]
+      ? [
+          ...menuItems,
+          { key: '/settings/fees', icon: <DollarOutlined />, label: '費率設定' },
+          { key: '/users', icon: <TeamOutlined />, label: '使用者管理' },
+        ]
       : menuItems;
 
   // /orders/:id 詳情頁時側欄仍高亮「訂單管理」

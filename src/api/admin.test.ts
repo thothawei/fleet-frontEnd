@@ -5,7 +5,9 @@ import {
   cancelRideByAdmin,
   createAdmin,
   fetchDispatchSettings,
+  fetchFeeSettings,
   fetchMe,
+  fetchMonthlyReport,
   fetchRideDetail,
   listAdmins,
   normalizeDriver,
@@ -13,6 +15,7 @@ import {
   patchDriverStatus,
   updateAdmin,
   updateDispatchSettings,
+  updateFeeSettings,
 } from './admin';
 
 vi.mock('./client', () => ({
@@ -312,5 +315,63 @@ describe('RBAC admin APIs', () => {
     vi.mocked(api.patch).mockResolvedValue({ data: {} });
     await updateAdmin(2, { is_active: false });
     expect(api.patch).toHaveBeenCalledWith('/admin/admins/2', { is_active: false });
+  });
+});
+
+describe('費率設定與月報表 API（G 系列）', () => {
+  beforeEach(() => {
+    vi.mocked(api.get).mockReset();
+    vi.mocked(api.put).mockReset();
+  });
+
+  it('fetchFeeSettings 呼叫 GET /admin/settings/fees', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        base_fare_cents: 8500,
+        per_km_fare_cents: 2000,
+        min_fare_cents: 8500,
+        commission_bps: 1500,
+        monthly_membership_fee_cents: 300000,
+      },
+    });
+    const fees = await fetchFeeSettings();
+    expect(api.get).toHaveBeenCalledWith('/admin/settings/fees');
+    expect(fees.commission_bps).toBe(1500);
+  });
+
+  it('updateFeeSettings 呼叫 PUT /admin/settings/fees', async () => {
+    vi.mocked(api.put).mockResolvedValue({ data: {} });
+    await updateFeeSettings({ commission_bps: 2000 });
+    expect(api.put).toHaveBeenCalledWith('/admin/settings/fees', { commission_bps: 2000 });
+  });
+
+  it('fetchMonthlyReport 帶 month 參數並回 drivers', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        month: '2026-07',
+        drivers: [
+          {
+            driver_id: 1,
+            driver_name: '甲',
+            trip_count: 3,
+            total_revenue_cents: 27000,
+            total_commission_cents: 4050,
+            driver_net_cents: 22950,
+            membership_fee_cents: 300000,
+            owed_to_hq_cents: 304050,
+          },
+        ],
+      },
+    });
+    const rows = await fetchMonthlyReport('2026-07');
+    expect(api.get).toHaveBeenCalledWith('/admin/reports/monthly', { params: { month: '2026-07' } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].owed_to_hq_cents).toBe(304050);
+  });
+
+  it('fetchMonthlyReport 無 drivers 時回空陣列', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: {} });
+    const rows = await fetchMonthlyReport('2026-07');
+    expect(rows).toEqual([]);
   });
 });

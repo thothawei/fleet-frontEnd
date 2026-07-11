@@ -228,6 +228,60 @@ CI 慢於本機，才會踩中這個時間差。
 
 ---
 
+## 七、手續費／會費／營運報表（2026-07-11 規劃）
+
+> 需求：後台可設「手續費%數」，報表顯示司機營業狀況（營業額）、應付總公司金額，
+> 以及車隊會費設定。**本區塊全部依賴後端 F 系列**（見
+> [line-fleet-dispatch/docs/TODO.md](../../line-fleet-dispatch/docs/TODO.md)「F. 手續費／會費／營運報表」）：
+> 車資／手續費由後端於行程完成時定格計算，前端只負責設定與呈現，**勿在前端算錢**。
+>
+> 已定案：距離自動計費、手續費+會費並存、會費為月費固定金額、費率快照制、
+> 金額單位全系統統一（後端存分、前端顯示除 100）。設定頁僅 superadmin 可見/可寫。
+
+### 待後端 API（阻塞中，就緒後才串）
+
+| 依賴 | 後端端點 | 對應前端 |
+|---|---|---|
+| 後端 F4 | `GET/PUT /api/admin/settings/fees` | 費率設定頁 |
+| 後端 F5 | `GET /api/admin/reports/daily`（加金額欄位） | 報表頁金額欄位 |
+| 後端 F6 | `GET /api/admin/reports/monthly?month=YYYY-MM` | 月營運報表 |
+
+### 施作項目
+
+> **實作進度（2026-07-11）**：G1–G3 已完成。tsc/oxlint/vite build 綠、Vitest 86 tests 全過
+> （新增 10 案：費率 API、月報表 API、`FeeSettingsPage`、`MonthlyReportPage`）。
+> 金額用 `src/utils/money.ts`（分↔元/CSV）；費率表單以元/%輸入、送出換算回分/bps。
+> **尚未做**：對 docker 後端的真瀏覽器 E2E（G1 改費率→reload、G2/G3 金額對帳）。
+
+- [x] **G1. 費率設定頁** ✅（新路由 `/settings/fees`，`src/pages/FeeSettingsPage.tsx`）
+      表單：起步價/每公里/最低車資（元）、手續費（%）、月會費（元），串後端 F4。
+      RBAC：路由包 `RequireRole min="superadmin"`；側欄入口與儲存鈕僅 superadmin
+      （`auth.isSuperadmin()`）。表單值以元/%呈現，`toApi`/`toForm` 換算分/bps。
+
+- [x] **G2. 日報表加金額欄位** ✅（`ReportsPage.tsx` + `api/admin.ts`）
+      `DailyReportRow` 加 `total_revenue_cents`/`total_commission_cents`/`driver_net_cents`；
+      表格加營業額/手續費/司機實得欄（右對齊、`fmtYuan`）；摘要列加營業額；CSV 加三欄。
+
+- [x] **G3. 月營運報表頁** ✅（新路由 `/reports/monthly`，`src/pages/MonthlyReportPage.tsx`）
+      月選（DatePicker picker="month"）→ 每司機營業額/手續費/月會費/**應付總公司**/司機實得，
+      Table.Summary 底部合計列；摘要 Alert；CSV 匯出。串後端 F6。側欄加「月報表」入口。
+
+### 大資料量對應（前端）
+
+> 報表大資料量的預防在後端（見 dispatch F9）。前端配合點：
+> - 月報表／日報表**依賴後端伺服器端聚合**（F5/F6 已是每司機一列，天然有界），勿在前端跨大量原始 rides 自行加總。
+> - 報表日期區間 UI 設**合理上限**（對齊後端 F9-4 的查詢跨度上限），避免使用者一次拉超大範圍打爆後端。
+> - 訂單逐筆列表改**伺服器端分頁**（待後端 `GET /api/admin/rides` 補 `offset`／日期區間，F9-5），
+>   解掉現行「client-side 過濾最近 100 筆」的限制（見「3.4 訂單瀏覽增強」）。
+
+### 驗收方式
+
+- G1：以 superadmin 登入改費率 → PUT 成功 → reload 值保留；非 superadmin 看不到入口（RBAC）。
+- G2/G3：對 docker 後端（含已完成行程）實跑，畫面金額與後端加總一致；CSV 欄位正確、UTF-8 BOM。
+- 沿用既有 Vitest：補 `ReportsPage`／設定頁的金額欄位與 RBAC 測試。
+
+---
+
 ## 參考文件
 
 - 後端總規劃：[line-fleet-dispatch/docs/2026-07-07-gap-analysis-plan.md](../../line-fleet-dispatch/docs/2026-07-07-gap-analysis-plan.md)
