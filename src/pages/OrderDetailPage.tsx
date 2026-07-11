@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Modal, message, Breadcrumb, Timeline, Tooltip } from 'antd';
 import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined, StopOutlined } from '@ant-design/icons';
-import type { AxiosError } from 'axios';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -13,6 +12,7 @@ import { canDispatch } from '../auth/auth';
 import { actorRoleLabel, isRideCancellable, RIDE_STATUS, rideEventLabel } from '../constants';
 
 import { DEFAULT_MAP_CENTER, MAP_HEIGHT, MAP_STYLE } from '../components/mapStyle';
+import { apiError } from '../utils/apiError';
 const TRACK_SOURCE_ID = 'ride-track';
 const TRACK_LAYER_ID = 'ride-track-line';
 const PLAYBACK_INTERVAL_MS = 300;
@@ -21,10 +21,6 @@ function fmtTime(t: string | null): string {
   return t ? new Date(t).toLocaleString('zh-TW') : '—';
 }
 
-function apiError(err: unknown, fallback: string): string {
-  const ax = err as AxiosError<{ error?: string }>;
-  return ax.response?.data?.error ?? fallback;
-}
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();

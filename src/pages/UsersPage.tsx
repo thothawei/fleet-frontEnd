@@ -2,20 +2,15 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Form, Input, Modal, Select, Switch, Table, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { AxiosError } from 'axios';
 
 import { createAdmin, listAdmins, updateAdmin, type AdminUser } from '../api/admin';
+import { apiError } from '../utils/apiError';
 
 const ROLE_OPTS = [
   { value: 'viewer', label: '檢視者' },
   { value: 'dispatcher', label: '派單員' },
   { value: 'superadmin', label: '超級管理員' },
 ];
-
-function apiError(err: unknown, fallback: string): string {
-  const ax = err as AxiosError<{ error?: string }>;
-  return ax.response?.data?.error ?? fallback;
-}
 
 interface CreateAdminForm {
   username: string;

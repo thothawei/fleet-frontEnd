@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Badge, Card, Spin } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -14,6 +15,7 @@ function fmtUpdatedAt(sec: number): string {
 }
 
 export default function FleetPage() {
+  const navigate = useNavigate();
   const { data: snapshot = [], isLoading } = useQuery({
     queryKey: ['fleet'],
     queryFn: fetchFleet,
@@ -48,6 +50,20 @@ export default function FleetPage() {
     };
   }, [isLoading]);
 
+  // popup 內「查看司機」連結：委派點擊 → SPA 導向詳情頁（href 保留，JS 失效時仍可整頁跳轉）
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const onClick = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest('[data-driver-link]');
+      if (!link) return;
+      e.preventDefault();
+      navigate(`/drivers/${link.getAttribute('data-driver-link')}`);
+    };
+    container.addEventListener('click', onClick);
+    return () => container.removeEventListener('click', onClick);
+  }, [navigate]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -61,6 +77,7 @@ export default function FleetPage() {
         `<strong>${driver?.Name ?? `司機 #${loc.driver_id}`}</strong>`,
         statusMeta ? `狀態：${statusMeta.label}` : '',
         `更新：${fmtUpdatedAt(loc.updated_at)}`,
+        `<a href="/drivers/${loc.driver_id}" data-driver-link="${loc.driver_id}" style="color:#1677ff">查看司機 →</a>`,
       ]
         .filter(Boolean)
         .join('<br/>');

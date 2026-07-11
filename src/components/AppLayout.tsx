@@ -1,5 +1,5 @@
 import { BarChartOutlined, CarOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, ScheduleOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
-import { Layout, Menu, Typography, Button } from 'antd';
+import { Layout, Menu, Modal, Typography, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { clearSession, getAdminName, getRole } from '../auth/auth';
@@ -22,8 +22,15 @@ export default function AppLayout() {
   const location = useLocation();
 
   const logout = () => {
-    clearSession();
-    navigate('/login');
+    Modal.confirm({
+      title: '確定要登出？',
+      okText: '登出',
+      cancelText: '取消',
+      onOk: () => {
+        clearSession();
+        navigate('/login');
+      },
+    });
   };
 
   // 費率設定、使用者管理僅 superadmin 可見（後端亦有對應權限檢查）
@@ -36,8 +43,12 @@ export default function AppLayout() {
         ]
       : menuItems;
 
-  // /orders/:id 詳情頁時側欄仍高亮「訂單管理」
-  const selectedKey = location.pathname.startsWith('/orders') ? '/orders' : location.pathname;
+  // 詳情頁（/orders/:id、/drivers/:id）時側欄仍高亮對應主選單
+  const selectedKey = location.pathname.startsWith('/orders')
+    ? '/orders'
+    : location.pathname.startsWith('/drivers')
+      ? '/drivers'
+      : location.pathname;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>

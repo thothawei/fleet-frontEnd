@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Form, InputNumber, message, Spin } from 'antd';
-import type { AxiosError } from 'axios';
+import { Alert, Button, Card, Form, InputNumber, message, Skeleton } from 'antd';
 
 import {
   fetchDispatchSettings,
@@ -9,6 +8,7 @@ import {
   type DispatchSettings,
 } from '../api/admin';
 import { canDispatch } from '../auth/auth';
+import { apiError } from '../utils/apiError';
 
 const FIELD_RULES = {
   radius_m: { min: 100, max: 50000, label: '搜尋半徑（公尺）' },
@@ -17,11 +17,6 @@ const FIELD_RULES = {
   max_attempts: { min: 1, max: 10, label: '最大重派次數' },
   rate_limit_per_min: { min: 1, max: 30, label: '叫車限流（次/分）' },
 } as const;
-
-function apiError(err: unknown, fallback: string): string {
-  const ax = err as AxiosError<{ error?: string }>;
-  return ax.response?.data?.error ?? fallback;
-}
 
 export default function SettingsPage() {
   const [form] = Form.useForm<DispatchSettings>();
@@ -48,10 +43,8 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <Card>
-        <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Spin />
-        </div>
+      <Card title="派單參數設定">
+        <Skeleton active paragraph={{ rows: 6 }} />
       </Card>
     );
   }
