@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { message } from 'antd';
 
 import FeeSettingsPage from './FeeSettingsPage';
 import { renderWithProviders } from '../test/render';
@@ -29,6 +30,12 @@ describe('FeeSettingsPage', () => {
     mockUpdateFeeSettings.mockReset().mockResolvedValue(defaultFees);
   });
 
+  // message.success 會開一個 3 秒自動關閉的 timer，不清掉的話 teardown 後才觸發，
+  // React 在無 window 環境重新排程 → vitest 報 unhandled error 並 exit 1（CI 較慢更易踩中）。
+  afterEach(() => {
+    message.destroy();
+  });
+
   it('把後端「分/bps」換算成「元/%」填入表單', async () => {
     saveSession('tok', '管理員', 'superadmin');
     renderWithProviders(<FeeSettingsPage />);
@@ -53,6 +60,8 @@ describe('FeeSettingsPage', () => {
     await user.click(await screen.findByRole('button', { name: /儲\s*存/ }));
 
     await vi.waitFor(() => expect(mockUpdateFeeSettings).toHaveBeenCalled());
+    // 等 onSuccess 完整跑完（訊息 portal + 表單回填），否則測試會在 React 還有排程工作時就結束
+    expect(await screen.findByText('費率設定已更新')).toBeInTheDocument();
     const body = mockUpdateFeeSettings.mock.calls[0][0];
     expect(body.commission_bps).toBe(2000); // 20% → 2000 bps
     expect(body.base_fare_cents).toBe(8500); // 85 元 → 8500 分
