@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { message } from 'antd';
 
 import LoginPage from './LoginPage';
 import { renderWithProviders } from '../test/render';
@@ -55,6 +56,9 @@ describe('LoginPage', () => {
   });
 
   it('登入失敗顯示錯誤訊息', async () => {
+    // 用 spy 攔 message.error，避免真的開一個帶 3 秒 timer 的 toast——
+    // 該 timer 會在測試環境拆除後於無 window 環境被 React 重排，造成 CI 間歇 unhandled error。
+    const errorSpy = vi.spyOn(message, 'error').mockImplementation(() => ({ then: () => {} }) as never);
     mockLogin.mockRejectedValue(new Error('401'));
     const user = userEvent.setup();
 
@@ -64,8 +68,9 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: '登 入' }));
 
     await waitFor(() => {
-      expect(screen.getByText('登入失敗，請確認帳號密碼')).toBeInTheDocument();
+      expect(errorSpy).toHaveBeenCalledWith('登入失敗，請確認帳號密碼');
     });
     expect(mockNavigate).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });
