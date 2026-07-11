@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Card, DatePicker, Empty, Input, Select, Space, Table, Tag, Typography } from 'antd';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { Card, DatePicker, Empty, Input, Select, Space, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 
@@ -14,36 +14,50 @@ const statusOptions = [
   ...Object.entries(RIDE_STATUS).map(([k, v]) => ({ value: Number(k), label: v.label })),
 ];
 
+const PAGE_SIZE = 20;
+
 function fmtTime(t: string | null): string {
   return t ? new Date(t).toLocaleString('zh-TW') : '—';
 }
-
-/** 後端 `/admin/rides` 只吃 status + limit（無 offset／日期／關鍵字），故日期與搜尋在前端過濾。 */
-const RIDES_LIMIT = 100;
 
 export default function OrdersPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<number>(-1);
   const [range, setRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [keyword, setKeyword] = useState('');
-  const { data: rides = [], isLoading } = useQuery({
-    queryKey: ['rides', status],
-    queryFn: () => fetchRides(status === -1 ? undefined : status, RIDES_LIMIT),
+  const [debouncedKw, setDebouncedKw] = useState('');
+  const [page, setPage] = useState(1);
+
+  // 關鍵字打字防抖：停止輸入 400ms 才送查詢，避免每個按鍵打一次後端
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedKw(keyword.trim()), 400);
+    return () => clearTimeout(t);
+  }, [keyword]);
+
+  // 任一篩選條件變動就回到第一頁
+  useEffect(() => {
+    setPage(1);
+  }, [status, range, debouncedKw]);
+
+  const from = range ? range[0].format('YYYY-MM-DD') : undefined;
+  const to = range ? range[1].format('YYYY-MM-DD') : undefined;
+
+  const { data, isFetching } = useQuery({
+    queryKey: ['rides', { status, from, to, q: debouncedKw, page }],
+    queryFn: () =>
+      fetchRides({
+        status: status === -1 ? undefined : status,
+        from,
+        to,
+        q: debouncedKw || undefined,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      }),
+    placeholderData: keepPreviousData,
   });
 
-  const filtered = useMemo(() => {
-    const kw = keyword.trim().toLowerCase();
-    return rides.filter((r) => {
-      if (range) {
-        const t = new Date(r.requested_at).getTime();
-        if (t < range[0].startOf('day').valueOf() || t > range[1].endOf('day').valueOf()) {
-          return false;
-        }
-      }
-      if (!kw) return true;
-      return String(r.id).includes(kw) || (r.pickup_address ?? '').toLowerCase().includes(kw);
-    });
-  }, [rides, range, keyword]);
+  const rides = data?.rides ?? [];
+  const total = data?.total ?? 0;
 
   const columns: ColumnsType<RideRow> = [
     { title: '訂單', dataIndex: 'id', width: 80 },
@@ -100,15 +114,19 @@ export default function OrdersPage() {
         }
       />
       <Card>
-      <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-        日期與關鍵字在最近 {RIDES_LIMIT} 筆訂單內篩選（後端尚未支援分頁查詢）。
-      </Typography.Text>
       <Table
         rowKey="id"
-        loading={isLoading}
+        loading={isFetching}
         columns={columns}
-        dataSource={filtered}
-        pagination={{ pageSize: 20, showTotal: (total) => `共 ${total} 筆` }}
+        dataSource={rides}
+        pagination={{
+          current: page,
+          pageSize: PAGE_SIZE,
+          total,
+          showSizeChanger: false,
+          showTotal: (t) => `共 ${t} 筆`,
+          onChange: setPage,
+        }}
         size="middle"
         locale={{ emptyText: <Empty description="目前沒有資料" /> }}
         onRow={(record) => ({

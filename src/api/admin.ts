@@ -167,11 +167,43 @@ export function normalizeDriver(raw: Record<string, unknown>): Driver {
   };
 }
 
-export async function fetchRides(status?: number, limit = 100): Promise<RideRow[]> {
-  const params: Record<string, number> = { limit };
-  if (status !== undefined) params.status = status;
-  const { data } = await api.get<{ rides: RideRow[] }>('/admin/rides', { params });
-  return data.rides ?? [];
+export interface RideListFilter {
+  status?: number;
+  limit?: number;
+  offset?: number;
+  from?: string; // YYYY-MM-DD，篩 requested_at
+  to?: string;
+  q?: string; // 上車點地址／訂單 ID 關鍵字
+}
+
+export interface RideListResult {
+  rides: RideRow[];
+  total: number; // 符合條件的總筆數（不受 limit/offset 影響）
+  limit: number;
+  offset: number;
+}
+
+/** 伺服器端分頁查詢訂單：後端 `/admin/rides` 支援 status／日期區間／關鍵字／offset，回應帶 total。 */
+export async function fetchRides(filter: RideListFilter = {}): Promise<RideListResult> {
+  const params: Record<string, string | number> = {};
+  if (filter.status !== undefined) params.status = filter.status;
+  if (filter.limit !== undefined) params.limit = filter.limit;
+  if (filter.offset !== undefined) params.offset = filter.offset;
+  if (filter.from) params.from = filter.from;
+  if (filter.to) params.to = filter.to;
+  if (filter.q) params.q = filter.q;
+  const { data } = await api.get<{
+    rides: RideRow[];
+    total: number;
+    limit: number;
+    offset: number;
+  }>('/admin/rides', { params });
+  return {
+    rides: data.rides ?? [],
+    total: data.total ?? 0,
+    limit: data.limit ?? filter.limit ?? 100,
+    offset: data.offset ?? filter.offset ?? 0,
+  };
 }
 
 export async function fetchRideDetail(id: number): Promise<RideDetail> {
