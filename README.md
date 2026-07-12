@@ -24,20 +24,31 @@ src/
 ├── theme/tokens.ts       # LINE 綠品牌 tokens + 狀態語意色（AntD ConfigProvider）
 ├── auth/auth.ts          # JWT token 存取（localStorage）
 ├── api/
-│   ├── client.ts         # axios 實例：自動帶 JWT、401 導回登入
-│   └── admin.ts          # /api/admin/* 端點函式 + 型別
+│   ├── client.ts         # axios 實例：自動帶 JWT、token 過期/401 導回登入
+│   └── admin.ts          # /api/admin/* 端點函式 + 型別（含 normalize 兼容大小寫）
+├── utils/
+│   ├── apiError.ts       # 統一錯誤訊息（後端 error 欄位／逾時／斷線／5xx）
+│   ├── money.ts          # 金額格式化（分↔元、NT$）
+│   └── csv.ts            # CSV 匯出（RFC 4180 逸出 + UTF-8 BOM）
 ├── ws/useFleetSocket.ts  # WS hook：driver.location 事件即時更新車隊
 ├── components/
-│   ├── AppLayout.tsx     # 亮色側欄版面（營運總覽／即時車隊選單）
+│   ├── AppLayout.tsx     # 亮色側欄版面（登出二次確認、詳情頁高亮主選單）
+│   ├── ErrorBoundary.tsx # 全域 render 例外邊界（antd Result 非白屏）
 │   └── PageHeader.tsx    # 全站統一頁面標題列
 ├── pages/
-│   ├── LoginPage.tsx     # POST /api/admin/login（品牌化登入）
-│   ├── DashboardPage.tsx # 營運總覽首頁 `/`（KPI + 最近訂單）
-│   ├── FleetPage.tsx     # 即時車隊地圖 `/fleet`（GET /fleet 快照 + WS 增量）
-│   ├── OrdersPage.tsx    # 訂單列表（GET /rides，可篩狀態）
-│   ├── DriversPage.tsx   # 司機列表（GET /drivers）
-│   └── ReportsPage.tsx   # 日報表（GET /reports/daily）
-└── App.tsx / main.tsx    # 路由 + QueryClient + AntD ConfigProvider（theme）
+│   ├── LoginPage.tsx        # POST /api/admin/login（品牌化登入）
+│   ├── DashboardPage.tsx    # 營運總覽首頁 `/`（KPI + 最近訂單，Skeleton 載入）
+│   ├── FleetPage.tsx        # 即時車隊地圖 `/fleet`（快照 + WS 增量，marker 連司機詳情）
+│   ├── OrdersPage.tsx       # 訂單列表 `/orders`（伺服器端分頁／日期／關鍵字查詢）
+│   ├── OrderDetailPage.tsx  # 訂單詳情 `/orders/:id`（軌跡回放、狀態時間軸、強制取消）
+│   ├── DriversPage.tsx      # 司機列表 `/drivers`（搜尋／狀態篩選、啟停）
+│   ├── DriverDetailPage.tsx # 司機詳情 `/drivers/:id`
+│   ├── ReportsPage.tsx      # 日報表 `/reports`（含金額欄位、CSV）
+│   ├── MonthlyReportPage.tsx# 月營運報表 `/reports/monthly`（應付總公司、CSV）
+│   ├── SettingsPage.tsx     # 派單參數設定 `/settings`（dispatcher+）
+│   ├── FeeSettingsPage.tsx  # 費率設定 `/settings/fees`（superadmin）
+│   └── UsersPage.tsx        # 使用者管理 `/users`（superadmin）
+└── App.tsx / main.tsx    # 路由（RequireAuth/RequireRole）+ QueryClient + AntD ConfigProvider + <App>
 ```
 
 ## 對接的後端端點（line-fleet-dispatch）
@@ -47,11 +58,16 @@ src/
 | 登入 | `POST /api/admin/login` |
 | 營運總覽 | `GET /api/admin/rides` + `GET /api/admin/drivers` + `GET /api/admin/fleet`（組合 KPI） |
 | 即時車隊 | `GET /api/admin/fleet` + `GET /ws?token=`（`driver.location` 事件） |
-| 訂單管理 | `GET /api/admin/rides?status=&limit=` |
-| 司機管理 | `GET /api/admin/drivers` |
-| 日報表 | `GET /api/admin/reports/daily?date=` |
+| 訂單管理 | `GET /api/admin/rides?status=&limit=&offset=&from=&to=&q=`（回 `total`，伺服器端分頁） |
+| 訂單詳情 | `GET /api/admin/rides/:id`（軌跡 GeoJSON + 事件）、`POST /api/admin/rides/:id/cancel` |
+| 司機管理 | `GET /api/admin/drivers`、`PATCH /api/admin/drivers/:id/status` |
+| 日報表 | `GET /api/admin/reports/daily?date=`（含金額欄位） |
+| 月報表 | `GET /api/admin/reports/monthly?month=YYYY-MM` |
+| 派單參數 | `GET/PUT /api/admin/settings/dispatch` |
+| 費率設定 | `GET/PUT /api/admin/settings/fees`（superadmin） |
+| 使用者管理 | `GET/POST /api/admin/admins`、`PATCH /api/admin/admins/:id`（superadmin） |
 
-後台用**帳號 + 密碼**登入。管理員由後端環境變數 `ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD` 種子建立。
+後台用**帳號 + 密碼**登入；角色分 `viewer`／`dispatcher`／`superadmin`（前端 `RequireRole` + 後端雙重把關）。管理員由後端環境變數 `ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD` 種子建立。
 
 ## 快速開始（與 line-fleet-dispatch 串聯）
 
@@ -167,6 +183,13 @@ VITE_WS_BASE=wss://api.example.com
 
 ## 現況與 roadmap
 
-**已完成（本次 scaffold）**：登入、受保護路由、Ant Design 版面、即時車隊地圖、訂單/司機列表、日報表，全部串接後端 API/WS。`npm run build` 通過。
+**已完成**（詳見 [`docs/TODO.md`](docs/TODO.md)）：
 
-**待辦**：司機審核啟用/停用（需後端 D2）、派單參數設定（需後端 D3）。訂單詳情 + 軌跡回放、路由 code-splitting、關鍵頁測試、CI、**C5 視覺驗證** 已完成。
+- **核心瀏覽**：登入、營運總覽 Dashboard、即時車隊地圖、訂單列表＋詳情/軌跡回放、司機列表＋詳情、日/月報表。
+- **寫入操作**：司機啟停、派單參數設定、強制取消訂單、費率設定、使用者管理（RBAC）。
+- **手續費／會費／報表**（G1–G3）：費率設定頁、日報表金額欄位、月營運報表（應付總公司），與後端 F 系列＋App 端三端對帳通過。
+- **訂單伺服器端分頁**：日期／關鍵字／分頁全走後端 `GET /api/admin/rides`（`offset`/`from`/`to`/`q`/`total`）。
+- **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`）、Skeleton 載入、WS 斷線重連。
+- **工程**：路由 code-splitting、Vitest（22 檔 92 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
+
+**待辦（低優先／依賴外部）**：統一錯誤處理層再涵蓋 query 讀取錯誤、RBAC 多角色細分、審計日誌 UI、i18n、E2E（Playwright/Cypress）、前端 Docker 化與部署 workflow。
