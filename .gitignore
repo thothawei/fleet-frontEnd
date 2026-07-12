@@ -16,6 +16,8 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
+# Cursor IDE 的本機 agent 規則/設定（各人自留，勿進版控）
+.cursor/
 .DS_Store
 *.suo
 *.ntvs*
