@@ -1,4 +1,4 @@
-import { BarChartOutlined, CarOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, ScheduleOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
+import { AccountBookOutlined, BarChartOutlined, CarOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, ScheduleOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
 import { App, Layout, Menu, Typography, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ const menuItems = [
   { key: '/drivers', icon: <CarOutlined />, label: '司機管理' },
   { key: '/reports', icon: <BarChartOutlined />, label: '日報表' },
   { key: '/reports/monthly', icon: <ScheduleOutlined />, label: '月報表' },
+  { key: '/membership-invoices', icon: <AccountBookOutlined />, label: '會費帳單' },
   { key: '/settings', icon: <SettingOutlined />, label: '設定' },
 ];
 

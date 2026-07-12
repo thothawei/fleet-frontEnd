@@ -196,8 +196,10 @@ CI 慢於本機，才會踩中這個時間差。
    （Reports/Monthly 用 inline Alert、其餘靜默）。可評估 QueryCache 全域 `onError`，但要避免與 inline Alert 重複。
 2. **RBAC 多角色細分 / 審計日誌 UI**：依後端 `ride_events` 與角色權限開對應畫面。
 3. **產品化**：i18n、E2E（Playwright/Cypress）、前端 Docker 化（nginx 靜態映像）＋部署 workflow、runtime config 注入。
-4. **會費帳單 UI**（依後端 F8 已落地）：`membership_invoices` 的列表／產生／標記已繳畫面
-   （`GET /api/admin/membership-invoices`、`POST .../generate`、`PATCH .../:id`）。
+4. ~~會費帳單 UI~~ ✅ 2026-07-12。`MembershipInvoicesPage`（`/membership-invoices`，側欄入口）：
+   月選＋狀態篩選、未繳/已繳計數、司機/期別/金額/狀態/繳費時間表；superadmin 可「產生本月帳單」
+   （冪等 Popconfirm）與「標記已繳/改未繳」。串 `GET/POST/PATCH /api/admin/membership-invoices`。
+   驗收：Vitest 4 案（列表/產生/標記/viewer RBAC）；docker E2E 造 3 帳單→標記已繳→未繳2/已繳1。
 
 > Git：main 受保護（required check `check`、`enforce_admins: true`），走 `gh pr create` → 等 CI 綠 →
 > `gh pr merge --squash --delete-branch`。
