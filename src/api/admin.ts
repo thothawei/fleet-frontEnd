@@ -299,6 +299,48 @@ export async function fetchMonthlyReport(month: string): Promise<MonthlyReportRo
   return data.drivers ?? [];
 }
 
+// ---- 會費帳單（F8）----
+
+export interface MembershipInvoice {
+  id: number;
+  driver_id: number;
+  driver_name: string;
+  period: string; // YYYY-MM
+  amount_cents: number;
+  status: 'unpaid' | 'paid';
+  paid_at: string | null;
+}
+
+/** 會費帳單列表（viewer）；status 省略為全部。 */
+export async function fetchMembershipInvoices(
+  month: string,
+  status?: 'paid' | 'unpaid',
+): Promise<MembershipInvoice[]> {
+  const params: Record<string, string> = { month };
+  if (status) params.status = status;
+  const { data } = await api.get<{ invoices: MembershipInvoice[] }>('/admin/membership-invoices', {
+    params,
+  });
+  return data.invoices ?? [];
+}
+
+/** 產生當月會費帳單（superadmin，冪等）；回傳新開張數與金額（分）。 */
+export async function generateMembershipInvoices(
+  month: string,
+): Promise<{ created: number; amount_cents: number }> {
+  const { data } = await api.post<{ month: string; created: number; amount_cents: number }>(
+    '/admin/membership-invoices/generate',
+    null,
+    { params: { month } },
+  );
+  return { created: data.created, amount_cents: data.amount_cents };
+}
+
+/** 標記帳單已繳/未繳（superadmin）。 */
+export async function setMembershipInvoicePaid(id: number, paid: boolean): Promise<void> {
+  await api.patch(`/admin/membership-invoices/${id}`, { paid });
+}
+
 export async function fetchFeeSettings(): Promise<FeeSettings> {
   const { data } = await api.get<FeeSettings>('/admin/settings/fees');
   return data;
