@@ -1,5 +1,5 @@
 import { BarChartOutlined, CarOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, ScheduleOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
-import { Layout, Menu, Modal, Typography, Button } from 'antd';
+import { App, Layout, Menu, Typography, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { clearSession, getAdminName, getRole } from '../auth/auth';
@@ -20,9 +20,10 @@ const menuItems = [
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { modal } = App.useApp();
 
   const logout = () => {
-    Modal.confirm({
+    modal.confirm({
       title: '確定要登出？',
       okText: '登出',
       cancelText: '取消',

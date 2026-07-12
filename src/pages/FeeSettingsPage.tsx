@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Form, InputNumber, message, Skeleton } from 'antd';
+import { Alert, App, Button, Card, Form, InputNumber, Skeleton } from 'antd';
 
 import { fetchFeeSettings, updateFeeSettings, type FeeSettings } from '../api/admin';
 import { isSuperadmin } from '../auth/auth';
@@ -38,6 +38,7 @@ function toApi(v: FeeFormValues): Partial<FeeSettings> {
 export default function FeeSettingsPage() {
   const [form] = Form.useForm<FeeFormValues>();
   const queryClient = useQueryClient();
+  const { message } = App.useApp();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['fee-settings'],
@@ -67,7 +68,7 @@ export default function FeeSettingsPage() {
   }
 
   if (error) {
-    return <Alert type="error" message="讀取費率設定失敗" showIcon />;
+    return <Alert type="error" title="讀取費率設定失敗" showIcon />;
   }
 
   return (
@@ -76,7 +77,7 @@ export default function FeeSettingsPage() {
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
-        message="手續費與會費設定"
+        title="手續費與會費設定"
         description="變更只影響之後完成的行程；已完成行程沿用當時費率（快照制），歷史報表不受影響。"
       />
       <Form
@@ -90,35 +91,35 @@ export default function FeeSettingsPage() {
           label="起步價（元）"
           rules={[{ required: true, message: '請填寫起步價' }, { type: 'number', min: 0, max: 10000 }]}
         >
-          <InputNumber min={0} max={10000} precision={2} addonBefore="NT$" style={{ width: '100%' }} />
+          <InputNumber min={0} max={10000} precision={2} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="per_km_fare"
           label="每公里費率（元）"
           rules={[{ required: true, message: '請填寫每公里費率' }, { type: 'number', min: 0, max: 10000 }]}
         >
-          <InputNumber min={0} max={10000} precision={2} addonBefore="NT$" style={{ width: '100%' }} />
+          <InputNumber min={0} max={10000} precision={2} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="min_fare"
           label="最低車資（元）"
           rules={[{ required: true, message: '請填寫最低車資' }, { type: 'number', min: 0, max: 10000 }]}
         >
-          <InputNumber min={0} max={10000} precision={2} addonBefore="NT$" style={{ width: '100%' }} />
+          <InputNumber min={0} max={10000} precision={2} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="commission_pct"
           label="手續費（%）"
           rules={[{ required: true, message: '請填寫手續費百分比' }, { type: 'number', min: 0, max: 100 }]}
         >
-          <InputNumber min={0} max={100} precision={2} addonAfter="%" style={{ width: '100%' }} />
+          <InputNumber min={0} max={100} precision={2} suffix="%" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="monthly_membership_fee"
           label="月會費（元）"
           rules={[{ required: true, message: '請填寫月會費' }, { type: 'number', min: 0, max: 1000000 }]}
         >
-          <InputNumber min={0} max={1000000} precision={2} addonBefore="NT$" style={{ width: '100%' }} />
+          <InputNumber min={0} max={1000000} precision={2} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={mutation.isPending} disabled={!isSuperadmin()}>

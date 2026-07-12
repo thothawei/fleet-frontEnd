@@ -127,7 +127,7 @@ export default function FleetPage() {
         <Alert
           type={reconnecting ? 'warning' : 'error'}
           showIcon
-          message={reconnecting ? '即時連線中斷，正在自動重連…' : '即時連線已中斷，顯示最後快照'}
+          title={reconnecting ? '即時連線中斷，正在自動重連…' : '即時連線已中斷，顯示最後快照'}
           style={{ margin: 16, marginBottom: 0 }}
         />
       )}

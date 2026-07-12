@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Form, Input, Modal, Select, Switch, Table, message } from 'antd';
+import { App, Button, Card, Form, Input, Modal, Select, Switch, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 import { createAdmin, listAdmins, updateAdmin, type AdminUser } from '../api/admin';
@@ -20,6 +20,7 @@ interface CreateAdminForm {
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
+  const { message } = App.useApp();
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm<CreateAdminForm>();
 

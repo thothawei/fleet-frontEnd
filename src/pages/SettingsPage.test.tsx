@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { message } from 'antd';
 
 import SettingsPage from './SettingsPage';
 import { setRole } from '../auth/auth';
@@ -9,6 +9,8 @@ import { renderWithProviders } from '../test/render';
 
 const mockFetchDispatchSettings = vi.fn();
 const mockUpdateDispatchSettings = vi.fn();
+// App.useApp() 的 message spy：不渲染真 toast（無 3 秒 timer），直接斷言呼叫
+const mockMessage = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
 
 vi.mock('../api/admin', async () => {
   const actual = await vi.importActual('../api/admin');
@@ -19,11 +21,20 @@ vi.mock('../api/admin', async () => {
   };
 });
 
+vi.mock('antd', async () => {
+  const actual = await vi.importActual<typeof import('antd')>('antd');
+  const MockApp = Object.assign(({ children }: { children: ReactNode }) => children, {
+    useApp: () => ({ message: mockMessage, modal: { confirm: vi.fn() }, notification: {} }),
+  });
+  return { ...actual, App: MockApp };
+});
+
 describe('SettingsPage', () => {
   beforeEach(() => {
     setRole('dispatcher'); // 儲存按鈕需 dispatcher 以上權限才可操作，見 Task 13
     mockFetchDispatchSettings.mockReset();
     mockUpdateDispatchSettings.mockReset();
+    mockMessage.success.mockReset();
     mockFetchDispatchSettings.mockResolvedValue({
       radius_m: 3000,
       max_drivers: 5,
@@ -38,12 +49,6 @@ describe('SettingsPage', () => {
       max_attempts: 3,
       rate_limit_per_min: 5,
     });
-  });
-
-  // message.success 會開一個 3 秒自動關閉的 timer，不清掉的話 teardown 後才觸發，
-  // React 會在沒有 window 的環境重新排程 → vitest 報 unhandled ReferenceError 並 exit 1
-  afterEach(() => {
-    message.destroy();
   });
 
   it('載入並顯示派單參數表單', async () => {
@@ -78,9 +83,11 @@ describe('SettingsPage', () => {
       });
     });
 
-    // 等 onSuccess 完全跑完（訊息 portal + 表單回填），否則測試會在 React 還有
+    // 等 onSuccess 完全跑完（成功訊息 + 表單回填），否則測試會在 React 還有
     // 排程工作時就結束，那些工作會在測試環境拆除後才執行
-    expect(await screen.findByText('派單參數已更新')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockMessage.success).toHaveBeenCalledWith('派單參數已更新');
+    });
     await waitFor(() => {
       expect(screen.getByDisplayValue('5000')).toBeInTheDocument();
     });

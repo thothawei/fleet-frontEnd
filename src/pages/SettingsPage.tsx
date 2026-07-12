@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Form, InputNumber, message, Skeleton } from 'antd';
+import { Alert, App, Button, Card, Form, InputNumber, Skeleton } from 'antd';
 
 import {
   fetchDispatchSettings,
@@ -21,6 +21,7 @@ const FIELD_RULES = {
 export default function SettingsPage() {
   const [form] = Form.useForm<DispatchSettings>();
   const queryClient = useQueryClient();
+  const { message } = App.useApp();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['dispatch-settings'],
@@ -50,7 +51,7 @@ export default function SettingsPage() {
   }
 
   if (error) {
-    return <Alert type="error" message="讀取派單參數失敗" showIcon />;
+    return <Alert type="error" title="讀取派單參數失敗" showIcon />;
   }
 
   return (
@@ -59,7 +60,7 @@ export default function SettingsPage() {
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
-        message="執行期設定"
+        title="執行期設定"
         description="變更立即生效；後端重啟後會還原為 .env 預設值。"
       />
       <Form

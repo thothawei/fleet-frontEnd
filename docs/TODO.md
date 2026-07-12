@@ -120,10 +120,13 @@
 - [x] **營運總覽 Dashboard** — `/` KPI + 最近訂單；即時車隊移至 `/fleet`（2026-07-10）
 - [x] **側欄／登入頁品牌化** — 亮色側欄 logo 區、登入頁漸層卡片（2026-07-10）
 - [x] **統一 PageHeader＋表格空狀態** — Orders／Drivers／Reports（2026-07-10）
-- [ ] **Skeleton 載入** — 取代部分 `<Spin>` 全頁遮罩（Dashboard 已用 Skeleton）
+- [x] **Skeleton 載入**（2026-07-11）— Settings／FeeSettings 全頁 `<Spin>` 改 Skeleton（Dashboard 早已是）
 - [x] **全域 Error Boundary**（2026-07-10）— `components/ErrorBoundary.tsx` 掛在 `main.tsx`
       的 ConfigProvider 內、BrowserRouter 外；顯示 antd Result + 重新載入／回首頁
-- [ ] **統一錯誤處理層** — axios / Query 錯誤訊息一致化
+- [x] **統一錯誤處理層**（2026-07-11）— 共用 `src/utils/apiError.ts`（後端訊息／逾時／斷線／5xx）
+- [x] **antd v6 deprecation 清理**（2026-07-11）— `Alert message`→`title`、`InputNumber addon`→`prefix/suffix`、
+      靜態 `message`/`Modal.confirm`→`App.useApp()`（`main.tsx` 加 `<App>` wrapper，能吃主題 context）；
+      console 已無 antd deprecation warning
 - [x] **側欄「設定」入口** — C3 SettingsPage `/settings`
 - [x] **響應式地圖高度** — `min(600px, 70vh)` / `min(500px, 60vh)`
 - [x] **README 版本校正** — 2026-07-10 改為 React 19 / AntD v6 / Vite 8，對齊 `package.json`

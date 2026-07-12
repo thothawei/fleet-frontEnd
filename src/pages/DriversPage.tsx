@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, Empty, Input, Modal, Select, Space, Switch, Table, Tag, Tooltip, message } from 'antd';
+import { App, Card, Empty, Input, Select, Space, Switch, Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Link } from 'react-router-dom';
 
@@ -17,6 +17,7 @@ const STATUS_OPTIONS = [
 
 export default function DriversPage() {
   const queryClient = useQueryClient();
+  const { message, modal } = App.useApp();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -48,7 +49,7 @@ export default function DriversPage() {
     const action = () => mutation.mutate({ id: driver.ID, enabled });
 
     if (!enabled) {
-      Modal.confirm({
+      modal.confirm({
         title: `停用司機「${driver.Name}」？`,
         content: '停用後司機無法上線，且會從派單池移除。載客中不可停用。',
         okText: '停用',

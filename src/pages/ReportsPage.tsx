@@ -98,13 +98,13 @@ export default function ReportsPage() {
       />
       <Card>
       {isError && (
-        <Alert type="error" message="日報表載入失敗，請稍後再試" showIcon style={{ marginBottom: 16 }} />
+        <Alert type="error" title="日報表載入失敗，請稍後再試" showIcon style={{ marginBottom: 16 }} />
       )}
       {!isLoading && rows.length > 0 && (
         <Alert
           type="info"
           showIcon
-          message={`${dateStr} 合計：${summary.trips} 趟 · ${summary.distanceKm.toFixed(2)} km · 營業額 ${fmtYuan(summary.revenueCents)}`}
+          title={`${dateStr} 合計：${summary.trips} 趟 · ${summary.distanceKm.toFixed(2)} km · 營業額 ${fmtYuan(summary.revenueCents)}`}
           style={{ marginBottom: 16 }}
         />
       )}
