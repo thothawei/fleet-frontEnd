@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConfigProvider } from 'antd';
+import { App as AntdApp, ConfigProvider } from 'antd';
 import zhTW from 'antd/locale/zh_TW';
 import { render, type RenderOptions } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -28,7 +28,9 @@ export function renderWithProviders(ui: ReactElement, options: Options = {}) {
     return (
       <QueryClientProvider client={queryClient}>
         <ConfigProvider locale={zhTW}>
-          <MemoryRouter initialEntries={[route]}>{content}</MemoryRouter>
+          <AntdApp>
+            <MemoryRouter initialEntries={[route]}>{content}</MemoryRouter>
+          </AntdApp>
         </ConfigProvider>
       </QueryClientProvider>
     );

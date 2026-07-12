@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { message } from 'antd';
 
 import FeeSettingsPage from './FeeSettingsPage';
 import { renderWithProviders } from '../test/render';
@@ -9,11 +9,21 @@ import { saveSession, clearSession } from '../auth/auth';
 
 const mockFetchFeeSettings = vi.fn();
 const mockUpdateFeeSettings = vi.fn();
+// App.useApp() 的 message spy：不渲染真 toast（無 3 秒 timer），直接斷言呼叫
+const mockMessage = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
 
 vi.mock('../api/admin', () => ({
   fetchFeeSettings: (...a: unknown[]) => mockFetchFeeSettings(...a),
   updateFeeSettings: (...a: unknown[]) => mockUpdateFeeSettings(...a),
 }));
+
+vi.mock('antd', async () => {
+  const actual = await vi.importActual<typeof import('antd')>('antd');
+  const MockApp = Object.assign(({ children }: { children: ReactNode }) => children, {
+    useApp: () => ({ message: mockMessage, modal: { confirm: vi.fn() }, notification: {} }),
+  });
+  return { ...actual, App: MockApp };
+});
 
 const defaultFees = {
   base_fare_cents: 8500,
@@ -28,12 +38,7 @@ describe('FeeSettingsPage', () => {
     clearSession();
     mockFetchFeeSettings.mockReset().mockResolvedValue(defaultFees);
     mockUpdateFeeSettings.mockReset().mockResolvedValue(defaultFees);
-  });
-
-  // message.success 會開一個 3 秒自動關閉的 timer，不清掉的話 teardown 後才觸發，
-  // React 在無 window 環境重新排程 → vitest 報 unhandled error 並 exit 1（CI 較慢更易踩中）。
-  afterEach(() => {
-    message.destroy();
+    mockMessage.success.mockReset();
   });
 
   it('把後端「分/bps」換算成「元/%」填入表單', async () => {
@@ -60,8 +65,8 @@ describe('FeeSettingsPage', () => {
     await user.click(await screen.findByRole('button', { name: /儲\s*存/ }));
 
     await vi.waitFor(() => expect(mockUpdateFeeSettings).toHaveBeenCalled());
-    // 等 onSuccess 完整跑完（訊息 portal + 表單回填），否則測試會在 React 還有排程工作時就結束
-    expect(await screen.findByText('費率設定已更新')).toBeInTheDocument();
+    // 等 onSuccess 完整跑完（成功訊息），否則測試會在 React 還有排程工作時就結束
+    await vi.waitFor(() => expect(mockMessage.success).toHaveBeenCalledWith('費率設定已更新'));
     const body = mockUpdateFeeSettings.mock.calls[0][0];
     expect(body.commission_bps).toBe(2000); // 20% → 2000 bps
     expect(body.base_fare_cents).toBe(8500); // 85 元 → 8500 分

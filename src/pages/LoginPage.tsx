@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Typography, message } from 'antd';
+import { App, Button, Card, Form, Input, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 
@@ -9,6 +9,7 @@ import { BRAND_PRIMARY } from '../theme/tokens';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

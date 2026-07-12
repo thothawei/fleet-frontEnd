@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Modal, message, Breadcrumb, Timeline, Tooltip } from 'antd';
+import { App, Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Breadcrumb, Timeline, Tooltip } from 'antd';
 import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined, StopOutlined } from '@ant-design/icons';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -26,6 +26,7 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { message, modal } = App.useApp();
   const rideId = Number(id);
 
   const { data, isLoading, error } = useQuery({
@@ -45,7 +46,7 @@ export default function OrderDetailPage() {
   });
 
   const confirmCancel = () => {
-    Modal.confirm({
+    modal.confirm({
       title: '強制取消此訂單？',
       content: '已上車的訂單無法取消。此操作會通知相關司機與乘客。',
       okText: '確認取消',
@@ -176,7 +177,7 @@ export default function OrderDetailPage() {
   if (error || !data) {
     return (
       <Card>
-        <Alert type="error" message="找不到訂單或讀取失敗" showIcon />
+        <Alert type="error" title="找不到訂單或讀取失敗" showIcon />
       </Card>
     );
   }

@@ -79,13 +79,13 @@ export default function MonthlyReportPage() {
       />
       <Card>
         {isError && (
-          <Alert type="error" message="月報表載入失敗，請稍後再試" showIcon style={{ marginBottom: 16 }} />
+          <Alert type="error" title="月報表載入失敗，請稍後再試" showIcon style={{ marginBottom: 16 }} />
         )}
         {!isLoading && rows.length > 0 && (
           <Alert
             type="info"
             showIcon
-            message={`${monthStr} 合計：${totals.trips} 趟 · 營業額 ${fmtYuan(totals.revenue)} · 應付總公司 ${fmtYuan(totals.owed)}`}
+            title={`${monthStr} 合計：${totals.trips} 趟 · 營業額 ${fmtYuan(totals.revenue)} · 應付總公司 ${fmtYuan(totals.owed)}`}
             style={{ marginBottom: 16 }}
           />
         )}

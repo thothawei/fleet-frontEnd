@@ -1,7 +1,7 @@
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { message } from 'antd';
 
 import LoginPage from './LoginPage';
 import { renderWithProviders } from '../test/render';
@@ -9,10 +9,20 @@ import { renderWithProviders } from '../test/render';
 const mockNavigate = vi.fn();
 const mockLogin = vi.fn();
 const mockSaveSession = vi.fn();
+// App.useApp() 回傳的 message spy：不渲染真 toast（無 3 秒 timer），可直接斷言呼叫
+const mockMessage = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return { ...actual, useNavigate: () => mockNavigate };
+});
+
+vi.mock('antd', async () => {
+  const actual = await vi.importActual<typeof import('antd')>('antd');
+  const MockApp = Object.assign(({ children }: { children: ReactNode }) => children, {
+    useApp: () => ({ message: mockMessage, modal: { confirm: vi.fn() }, notification: {} }),
+  });
+  return { ...actual, App: MockApp };
 });
 
 vi.mock('../api/admin', () => ({
@@ -29,6 +39,7 @@ describe('LoginPage', () => {
     mockNavigate.mockReset();
     mockLogin.mockReset();
     mockSaveSession.mockReset();
+    mockMessage.error.mockReset();
   });
 
   it('渲染登入表單', () => {
@@ -56,9 +67,6 @@ describe('LoginPage', () => {
   });
 
   it('登入失敗顯示錯誤訊息', async () => {
-    // 用 spy 攔 message.error，避免真的開一個帶 3 秒 timer 的 toast——
-    // 該 timer 會在測試環境拆除後於無 window 環境被 React 重排，造成 CI 間歇 unhandled error。
-    const errorSpy = vi.spyOn(message, 'error').mockImplementation(() => ({ then: () => {} }) as never);
     mockLogin.mockRejectedValue(new Error('401'));
     const user = userEvent.setup();
 
@@ -68,9 +76,8 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: '登 入' }));
 
     await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith('登入失敗，請確認帳號密碼');
+      expect(mockMessage.error).toHaveBeenCalledWith('登入失敗，請確認帳號密碼');
     });
     expect(mockNavigate).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
   });
 });
