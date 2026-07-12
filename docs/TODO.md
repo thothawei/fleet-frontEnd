@@ -189,16 +189,18 @@ CI 慢於本機，才會踩中這個時間差。
 
 ## 下次任務
 
-1. ~~後端補訂單查詢 API + 前端伺服器端分頁~~ ✅ 2026-07-11。後端 `GET /api/admin/rides` 已支援
-   `offset`／`from`／`to`／`q`／`limit`＋回 `total`（dispatch #2）；前端 OrdersPage 已改伺服器端分頁／
-   日期／關鍵字查詢，解除「client-side 過濾最近 100 筆」限制。
-2. ~~統一錯誤處理層~~ ✅ 2026-07-11。抽共用 `src/utils/apiError.ts`（可分辨後端訊息／逾時／斷線／5xx），
-   取代 5 頁重複；補單元測試。（註：query 讀取錯誤各頁仍以既有 inline Alert 呈現，未加全域 toast 以免重複。）
-3. ~~Skeleton 載入~~ ✅ 2026-07-11。Settings／FeeSettings 全頁 `<Spin>` 改 Skeleton（Dashboard 早已是）。
-4. ~~三個 repo 的 main 都該開 branch protection~~ ✅ 2026-07-10 完成。本 repo 的 required check 是
-   `check`；`enforce_admins: true`，**不能再直推 main**，改走 `gh pr create` → 等 CI 綠 →
-   `gh pr merge --squash --delete-branch`。三個 repo 的設定詳見
-   `line-fleet-dispatch/docs/STATUS.md`「Git 工作流」。
+> 2026-07-11~12 的可獨立前端項（伺服器端分頁、統一錯誤處理層、Skeleton、司機搜尋/詳情頁、
+> 地圖連動、登出確認、antd v6 deprecation 全清）皆已完成並合併進 main。剩下的多屬低優先或需先定產品方向：
+
+1. **query 讀取錯誤一致化**：目前 mutation 錯誤走共用 `apiError`，但 query（讀取）失敗各頁自行處理
+   （Reports/Monthly 用 inline Alert、其餘靜默）。可評估 QueryCache 全域 `onError`，但要避免與 inline Alert 重複。
+2. **RBAC 多角色細分 / 審計日誌 UI**：依後端 `ride_events` 與角色權限開對應畫面。
+3. **產品化**：i18n、E2E（Playwright/Cypress）、前端 Docker 化（nginx 靜態映像）＋部署 workflow、runtime config 注入。
+4. **會費帳單 UI**（依後端 F8 已落地）：`membership_invoices` 的列表／產生／標記已繳畫面
+   （`GET /api/admin/membership-invoices`、`POST .../generate`、`PATCH .../:id`）。
+
+> Git：main 受保護（required check `check`、`enforce_admins: true`），走 `gh pr create` → 等 CI 綠 →
+> `gh pr merge --squash --delete-branch`。
 
 ---
 
