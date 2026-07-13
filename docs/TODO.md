@@ -192,11 +192,13 @@ CI 慢於本機，才會踩中這個時間差。
 > 2026-07-11~12 的可獨立前端項（伺服器端分頁、統一錯誤處理層、Skeleton、司機搜尋/詳情頁、
 > 地圖連動、登出確認、antd v6 deprecation 全清）皆已完成並合併進 main。剩下的多屬低優先或需先定產品方向：
 
-1. **query 讀取錯誤一致化**：目前 mutation 錯誤走共用 `apiError`，但 query（讀取）失敗各頁自行處理
+1. **遺失物協尋後台頁（可選）**：後端已有協尋單資料（`lost_item_requests`），可加總覽列表
+   （狀態篩選、金額、對應行程連結）與對話稽核 UI（`GET /api/rides/:id/messages` admin 可讀）。
+2. **query 讀取錯誤一致化**：目前 mutation 錯誤走共用 `apiError`，但 query（讀取）失敗各頁自行處理
    （Reports/Monthly 用 inline Alert、其餘靜默）。可評估 QueryCache 全域 `onError`，但要避免與 inline Alert 重複。
-2. **RBAC 多角色細分 / 審計日誌 UI**：依後端 `ride_events` 與角色權限開對應畫面。
-3. **產品化**：i18n、E2E（Playwright/Cypress）、前端 Docker 化（nginx 靜態映像）＋部署 workflow、runtime config 注入。
-4. ~~會費帳單 UI~~ ✅ 2026-07-12。`MembershipInvoicesPage`（`/membership-invoices`，側欄入口）：
+3. **RBAC 多角色細分 / 審計日誌 UI**：依後端 `ride_events` 與角色權限開對應畫面。
+4. **產品化**：i18n、E2E（Playwright/Cypress）、前端 Docker 化（nginx 靜態映像）＋部署 workflow、runtime config 注入。
+5. ~~會費帳單 UI~~ ✅ 2026-07-12。`MembershipInvoicesPage`（`/membership-invoices`，側欄入口）：
    月選＋狀態篩選、未繳/已繳計數、司機/期別/金額/狀態/繳費時間表；superadmin 可「產生本月帳單」
    （冪等 Popconfirm）與「標記已繳/改未繳」。串 `GET/POST/PATCH /api/admin/membership-invoices`。
    驗收：Vitest 4 案（列表/產生/標記/viewer RBAC）；docker E2E 造 3 帳單→標記已繳→未繳2/已繳1。
@@ -265,6 +267,10 @@ CI 慢於本機，才會踩中這個時間差。
 
 - [x] **G1. 費率設定頁** ✅（新路由 `/settings/fees`，`src/pages/FeeSettingsPage.tsx`）
       表單：起步價/每公里/最低車資（元）、手續費（%）、月會費（元），串後端 F4。
+      **2026-07-13 加「遺失物協尋處理費（%）」欄位**（後端 `lost_item_fee_bps`，bps↔% 換算；
+      tooltip 註明建單當下快照）——乘客申請遺失物協尋時按該趟車資此比例收處理費。
+      Vitest 96 passed；後端 API round-trip 與快照制由 dispatch live E2E 30/30 驗過
+      （見 dispatch TODO「H. 對話與遺失物協尋」）。
       RBAC：路由包 `RequireRole min="superadmin"`；側欄入口與儲存鈕僅 superadmin
       （`auth.isSuperadmin()`）。表單值以元/%呈現，`toApi`/`toForm` 換算分/bps。
 

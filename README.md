@@ -188,8 +188,9 @@ VITE_WS_BASE=wss://api.example.com
 - **核心瀏覽**：登入、營運總覽 Dashboard、即時車隊地圖、訂單列表＋詳情/軌跡回放、司機列表＋詳情、日/月報表。
 - **寫入操作**：司機啟停、派單參數設定、強制取消訂單、費率設定、使用者管理（RBAC）。
 - **手續費／會費／報表**（G1–G3）：費率設定頁、日報表金額欄位、月營運報表（應付總公司），與後端 F 系列＋App 端三端對帳通過。
+  費率設定頁另含「遺失物協尋處理費（%）」（2026-07-13）——乘客申請協尋時按該趟車資此比例收處理費，金額建單當下快照。
 - **訂單伺服器端分頁**：日期／關鍵字／分頁全走後端 `GET /api/admin/rides`（`offset`/`from`/`to`/`q`/`total`）。
 - **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`）、Skeleton 載入、WS 斷線重連。
-- **工程**：路由 code-splitting、Vitest（22 檔 92 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
+- **工程**：路由 code-splitting、Vitest（23 檔 96 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
 
 **待辦（低優先／依賴外部）**：統一錯誤處理層再涵蓋 query 讀取錯誤、RBAC 多角色細分、審計日誌 UI、i18n、E2E（Playwright/Cypress）、前端 Docker 化與部署 workflow。
