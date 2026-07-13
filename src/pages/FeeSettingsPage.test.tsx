@@ -31,6 +31,7 @@ const defaultFees = {
   min_fare_cents: 8500,
   commission_bps: 1500,
   monthly_membership_fee_cents: 300000,
+  lost_item_fee_bps: 1000,
 };
 
 describe('FeeSettingsPage', () => {
@@ -45,11 +46,12 @@ describe('FeeSettingsPage', () => {
     saveSession('tok', '管理員', 'superadmin');
     renderWithProviders(<FeeSettingsPage />);
 
-    // 2000 分 → 20 元（每公里）、1500 bps → 15 %、300000 分 → 3000 元（月會費）
-    // 起步價/最低車資皆 85.00（值重複），故以這三個唯一值驗證。
+    // 2000 分 → 20 元（每公里）、1500 bps → 15 %、300000 分 → 3000 元（月會費）、
+    // 1000 bps → 10 %（遺失物處理費）。起步價/最低車資皆 85.00（值重複），故以唯一值驗證。
     expect(await screen.findByDisplayValue('15.00')).toBeInTheDocument();
     expect(screen.getByDisplayValue('20.00')).toBeInTheDocument();
     expect(screen.getByDisplayValue('3000.00')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('10.00')).toBeInTheDocument();
     // 85.00 出現兩次（起步價+最低車資）
     expect(screen.getAllByDisplayValue('85.00')).toHaveLength(2);
   });
@@ -71,6 +73,7 @@ describe('FeeSettingsPage', () => {
     expect(body.commission_bps).toBe(2000); // 20% → 2000 bps
     expect(body.base_fare_cents).toBe(8500); // 85 元 → 8500 分
     expect(body.monthly_membership_fee_cents).toBe(300000);
+    expect(body.lost_item_fee_bps).toBe(1000); // 10% → 1000 bps
   });
 
   it('非 superadmin 時儲存鈕停用', async () => {

@@ -68,6 +68,8 @@ export interface FeeSettings {
   min_fare_cents: number;
   commission_bps: number;
   monthly_membership_fee_cents: number;
+  /** 遺失物協尋處理費（bps，1000 = 10%），對該趟車資抽成，建單時快照 */
+  lost_item_fee_bps: number;
 }
 
 // 對齊後端 model.GeoPoint（2026-07-08 後端補了 json tag，欄位改 snake_case）

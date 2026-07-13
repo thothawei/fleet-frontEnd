@@ -13,6 +13,7 @@ interface FeeFormValues {
   min_fare: number;
   commission_pct: number;
   monthly_membership_fee: number;
+  lost_item_fee_pct: number;
 }
 
 function toForm(s: FeeSettings): FeeFormValues {
@@ -22,6 +23,7 @@ function toForm(s: FeeSettings): FeeFormValues {
     min_fare: s.min_fare_cents / 100,
     commission_pct: s.commission_bps / 100,
     monthly_membership_fee: s.monthly_membership_fee_cents / 100,
+    lost_item_fee_pct: s.lost_item_fee_bps / 100,
   };
 }
 
@@ -32,6 +34,7 @@ function toApi(v: FeeFormValues): Partial<FeeSettings> {
     min_fare_cents: Math.round(v.min_fare * 100),
     commission_bps: Math.round(v.commission_pct * 100),
     monthly_membership_fee_cents: Math.round(v.monthly_membership_fee * 100),
+    lost_item_fee_bps: Math.round(v.lost_item_fee_pct * 100),
   };
 }
 
@@ -120,6 +123,14 @@ export default function FeeSettingsPage() {
           rules={[{ required: true, message: '請填寫月會費' }, { type: 'number', min: 0, max: 1000000 }]}
         >
           <InputNumber min={0} max={1000000} precision={2} prefix="NT$" style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item
+          name="lost_item_fee_pct"
+          label="遺失物協尋處理費（%）"
+          tooltip="乘客申請遺失物協尋時，按該趟車資的此比例收取處理費；金額於建單當下快照，調整不影響既有協尋單。"
+          rules={[{ required: true, message: '請填寫遺失物處理費百分比' }, { type: 'number', min: 0, max: 100 }]}
+        >
+          <InputNumber min={0} max={100} precision={2} suffix="%" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={mutation.isPending} disabled={!isSuperadmin()}>
