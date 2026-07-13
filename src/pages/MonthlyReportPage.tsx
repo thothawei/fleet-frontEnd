@@ -86,6 +86,7 @@ export default function MonthlyReportPage() {
             type="info"
             showIcon
             title={`${monthStr} 合計：${totals.trips} 趟 · 營業額 ${fmtYuan(totals.revenue)} · 應付總公司 ${fmtYuan(totals.owed)}`}
+            description="會費以「會費帳單」頁產生的金額為準（快照，不受日後費率調整影響）；尚未產生帳單的月份會費顯示為 NT$ 0，可至該頁按「產生本月帳單」。"
             style={{ marginBottom: 16 }}
           />
         )}
