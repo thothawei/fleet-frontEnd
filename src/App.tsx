@@ -16,6 +16,7 @@ const DriverDetailPage = lazy(() => import('./pages/DriverDetailPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const MonthlyReportPage = lazy(() => import('./pages/MonthlyReportPage'));
 const MembershipInvoicesPage = lazy(() => import('./pages/MembershipInvoicesPage'));
+const LostItemsPage = lazy(() => import('./pages/LostItemsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const FeeSettingsPage = lazy(() => import('./pages/FeeSettingsPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
@@ -105,6 +106,7 @@ export default function App() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/reports/monthly" element={<MonthlyReportPage />} />
           <Route path="/membership-invoices" element={<MembershipInvoicesPage />} />
+          <Route path="/lost-items" element={<LostItemsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route
             path="/settings/fees"
