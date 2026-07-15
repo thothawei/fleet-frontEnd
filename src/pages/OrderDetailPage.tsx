@@ -194,7 +194,7 @@ export default function OrderDetailPage() {
   const canCancel = isRideCancellable(ride.status);
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size={16}>
+    <Space orientation="vertical" style={{ width: '100%' }} size={16}>
       <Breadcrumb
         items={[
           { title: <a onClick={() => navigate('/orders')}>訂單管理</a> },
