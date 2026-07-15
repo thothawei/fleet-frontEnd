@@ -45,7 +45,7 @@ describe('MembershipInvoicesPage', () => {
 
     await waitFor(() => expect(screen.getByText('司機甲')).toBeInTheDocument());
     expect(screen.getByText('司機乙')).toBeInTheDocument();
-    expect(screen.getAllByText('NT$ 3,000.00')).toHaveLength(2);
+    expect(screen.getAllByText('NT$ 3,000')).toHaveLength(2);
     expect(screen.getByText('未繳 1')).toBeInTheDocument();
     expect(screen.getByText('已繳 1')).toBeInTheDocument();
   });

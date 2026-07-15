@@ -27,10 +27,10 @@ describe('MonthlyReportPage', () => {
         driver_name: '測試司機',
         trip_count: 3,
         total_revenue_cents: 27000,
-        total_commission_cents: 4050,
-        driver_net_cents: 22950,
+        total_commission_cents: 4000,
+        driver_net_cents: 23000,
         membership_fee_cents: 300000,
-        owed_to_hq_cents: 304050,
+        owed_to_hq_cents: 304000,
       },
     ]);
   });
@@ -42,9 +42,9 @@ describe('MonthlyReportPage', () => {
     await waitFor(() => {
       expect(screen.getByText('測試司機')).toBeInTheDocument();
     });
-    // 27000 分 → NT$ 270.00 營業額；304050 分 → NT$ 3,040.50 應付總公司
-    expect(screen.getAllByText('NT$ 270.00').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('NT$ 3,040.50').length).toBeGreaterThan(0);
+    // 台幣整數元：27000 分 → NT$ 270 營業額；304000 分 → NT$ 3,040 應付總公司
+    expect(screen.getAllByText('NT$ 270').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NT$ 3,040').length).toBeGreaterThan(0);
   });
 
   it('匯出 CSV：檔名帶月份、含金額欄位', async () => {
@@ -60,7 +60,7 @@ describe('MonthlyReportPage', () => {
     const [filename, csv] = mockDownloadCsv.mock.calls[0] as [string, string];
     expect(filename).toMatch(/^月報表-\d{4}-\d{2}\.csv$/);
     expect(csv).toContain('應付總公司(元)');
-    expect(csv).toContain('1,測試司機,3,270.00,40.50,3000.00,3040.50,229.50');
+    expect(csv).toContain('1,測試司機,3,270,40,3000,3040,230');
   });
 
   it('沒有資料時匯出鈕停用', async () => {

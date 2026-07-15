@@ -46,14 +46,15 @@ describe('FeeSettingsPage', () => {
     saveSession('tok', '管理員', 'superadmin');
     renderWithProviders(<FeeSettingsPage />);
 
+    // 台幣無小數：金額欄位（元）為整數；百分比欄位（%）保留 2 位小數。
     // 2000 分 → 20 元（每公里）、1500 bps → 15 %、300000 分 → 3000 元（月會費）、
-    // 1000 bps → 10 %（遺失物處理費）。起步價/最低車資皆 85.00（值重複），故以唯一值驗證。
+    // 1000 bps → 10 %（遺失物處理費）。起步價/最低車資皆 85 元（值重複），故以唯一值驗證。
     expect(await screen.findByDisplayValue('15.00')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('20.00')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('3000.00')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('20')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('3000')).toBeInTheDocument();
     expect(screen.getByDisplayValue('10.00')).toBeInTheDocument();
-    // 85.00 出現兩次（起步價+最低車資）
-    expect(screen.getAllByDisplayValue('85.00')).toHaveLength(2);
+    // 85 元出現兩次（起步價+最低車資）
+    expect(screen.getAllByDisplayValue('85')).toHaveLength(2);
   });
 
   it('儲存時把「元/%」換算回「分/bps」送出', async () => {
@@ -81,7 +82,7 @@ describe('FeeSettingsPage', () => {
     renderWithProviders(<FeeSettingsPage />);
 
     // 先等表單載入（月會費值唯一），再檢查儲存鈕
-    await screen.findByDisplayValue('3000.00');
+    await screen.findByDisplayValue('3000');
     expect(screen.getByRole('button', { name: /儲\s*存/ })).toBeDisabled();
   });
 });
