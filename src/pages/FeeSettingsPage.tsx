@@ -94,21 +94,22 @@ export default function FeeSettingsPage() {
           label="起步價（元）"
           rules={[{ required: true, message: '請填寫起步價' }, { type: 'number', min: 0, max: 10000 }]}
         >
-          <InputNumber min={0} max={10000} precision={2} prefix="NT$" style={{ width: '100%' }} />
+          {/* 台幣無小數：金額欄位一律整數元（precision=0） */}
+          <InputNumber min={0} max={10000} precision={0} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="per_km_fare"
           label="每公里費率（元）"
           rules={[{ required: true, message: '請填寫每公里費率' }, { type: 'number', min: 0, max: 10000 }]}
         >
-          <InputNumber min={0} max={10000} precision={2} prefix="NT$" style={{ width: '100%' }} />
+          <InputNumber min={0} max={10000} precision={0} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="min_fare"
           label="最低車資（元）"
           rules={[{ required: true, message: '請填寫最低車資' }, { type: 'number', min: 0, max: 10000 }]}
         >
-          <InputNumber min={0} max={10000} precision={2} prefix="NT$" style={{ width: '100%' }} />
+          <InputNumber min={0} max={10000} precision={0} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="commission_pct"
@@ -122,7 +123,7 @@ export default function FeeSettingsPage() {
           label="月會費（元）"
           rules={[{ required: true, message: '請填寫月會費' }, { type: 'number', min: 0, max: 1000000 }]}
         >
-          <InputNumber min={0} max={1000000} precision={2} prefix="NT$" style={{ width: '100%' }} />
+          <InputNumber min={0} max={1000000} precision={0} prefix="NT$" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item
           name="lost_item_fee_pct"

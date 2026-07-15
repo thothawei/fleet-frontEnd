@@ -20,7 +20,7 @@ const ROWS = [
     driver_id: 3,
     driver_name: '協尋司機',
     description: '黑色雨傘',
-    fee_cents: 1120,
+    fee_cents: 1100,
     fee_bps: 1000,
     status: 'found',
     paid_at: null,
@@ -35,7 +35,7 @@ const ROWS = [
     driver_id: 3,
     driver_name: '協尋司機',
     description: '藍色背包',
-    fee_cents: 850,
+    fee_cents: 800,
     fee_bps: 1000,
     status: 'returned',
     paid_at: '2026-07-13T18:00:00+08:00',
@@ -56,9 +56,9 @@ describe('LostItemsPage', () => {
     expect(screen.getByText('藍色背包')).toBeInTheDocument();
     expect(screen.getByText('協尋乘客')).toBeInTheDocument();
     expect(screen.getByText('王小明')).toBeInTheDocument();
-    // 處理費快照金額（分→NT$）與 % 呈現
-    expect(screen.getByText('NT$ 11.20')).toBeInTheDocument();
-    expect(screen.getByText('NT$ 8.50')).toBeInTheDocument();
+    // 處理費快照金額（分→整數元 NT$）與 % 呈現
+    expect(screen.getByText('NT$ 11')).toBeInTheDocument();
+    expect(screen.getByText('NT$ 8')).toBeInTheDocument();
     // found 進行中、returned 不算 → 進行中 1
     expect(screen.getByText('進行中 1')).toBeInTheDocument();
     expect(screen.getByText('總計 2')).toBeInTheDocument();
