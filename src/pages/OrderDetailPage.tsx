@@ -7,7 +7,7 @@ import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined, StopOutlined } fr
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { cancelRideByAdmin, fetchRideDetail, parseTrackCoordinates } from '../api/admin';
+import { cancelRideByAdmin, fetchRideDetail, fetchRideMessages, parseTrackCoordinates } from '../api/admin';
 import { canDispatch } from '../auth/auth';
 import { actorRoleLabel, isRideCancellable, RIDE_STATUS, rideEventLabel } from '../constants';
 
@@ -32,6 +32,13 @@ export default function OrderDetailPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['ride', rideId],
     queryFn: () => fetchRideDetail(rideId),
+    enabled: Number.isFinite(rideId),
+  });
+
+  // 行程對話稽核（admin 唯讀）；後端 GET /api/rides/:id/messages
+  const { data: messages = [] } = useQuery({
+    queryKey: ['ride-messages', rideId],
+    queryFn: () => fetchRideMessages(rideId),
     enabled: Number.isFinite(rideId),
   });
 
@@ -187,7 +194,7 @@ export default function OrderDetailPage() {
   const canCancel = isRideCancellable(ride.status);
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size={16}>
+    <Space orientation="vertical" style={{ width: '100%' }} size={16}>
       <Breadcrumb
         items={[
           { title: <a onClick={() => navigate('/orders')}>訂單管理</a> },
@@ -281,6 +288,29 @@ export default function OrderDetailPage() {
               };
             })}
           />
+        )}
+      </Card>
+
+      <Card title={`行程對話（稽核）${messages.length > 0 ? ` · ${messages.length} 則` : ''}`}>
+        {messages.length === 0 ? (
+          <Empty description="此行程無對話紀錄" />
+        ) : (
+          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+            {messages.map((m) => {
+              const isDriver = m.sender_role === 'driver';
+              return (
+                <div key={m.id} style={{ marginBottom: 12 }}>
+                  <Space size={8} wrap>
+                    <Tag color={isDriver ? 'blue' : 'green'}>
+                      {isDriver ? '司機' : '乘客'} #{m.sender_id}
+                    </Tag>
+                    <span style={{ color: '#666', fontSize: 12 }}>{fmtTime(m.created_at)}</span>
+                  </Space>
+                  <div style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>{m.body}</div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </Card>
 

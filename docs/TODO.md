@@ -192,8 +192,14 @@ CI 慢於本機，才會踩中這個時間差。
 > 2026-07-11~12 的可獨立前端項（伺服器端分頁、統一錯誤處理層、Skeleton、司機搜尋/詳情頁、
 > 地圖連動、登出確認、antd v6 deprecation 全清）皆已完成並合併進 main。剩下的多屬低優先或需先定產品方向：
 
-1. **遺失物協尋後台頁（可選）**：後端已有協尋單資料（`lost_item_requests`），可加總覽列表
-   （狀態篩選、金額、對應行程連結）與對話稽核 UI（`GET /api/rides/:id/messages` admin 可讀）。
+1. ~~遺失物協尋後台頁~~ ✅ 2026-07-15（PR #11，依賴後端 dispatch#19 `GET /api/admin/lost-items`）。
+   `LostItemsPage`（`/lost-items`，側欄「遺失物協尋」入口）：狀態篩選（全部/待尋找/已尋獲/已付款/
+   已歸還/已結案）、進行中/總計計數、處理費快照金額與 %、無名乘客退回「乘客 #id」、行程欄連結訂單詳情。
+   `OrderDetailPage` 加「行程對話（稽核）」卡：串 `GET /api/rides/:id/messages`（admin 唯讀），
+   角色 Tag＋時間＋訊息、無紀錄空狀態；順手修掉 v6 漏網的 `Space direction`（vitest stderr 已無 antd warning）。
+   驗收：tsc/oxlint/build 綠、Vitest 102 passed（新增 6 案）；docker E2E 真瀏覽器——登入後
+   `/lost-items` 列表逐欄正確（NT$ 8.50＝850 分快照、已尋獲、進行中 1）、行程連結導到訂單詳情、
+   詳情頁對話稽核 8 則齊全；API 層 status 篩選/400/401 亦驗過（見 dispatch TODO H4）。
 2. **query 讀取錯誤一致化**：目前 mutation 錯誤走共用 `apiError`，但 query（讀取）失敗各頁自行處理
    （Reports/Monthly 用 inline Alert、其餘靜默）。可評估 QueryCache 全域 `onError`，但要避免與 inline Alert 重複。
 3. **RBAC 多角色細分 / 審計日誌 UI**：依後端 `ride_events` 與角色權限開對應畫面。

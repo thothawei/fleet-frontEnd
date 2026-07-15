@@ -343,6 +343,51 @@ export async function setMembershipInvoicePaid(id: number, paid: boolean): Promi
   await api.patch(`/admin/membership-invoices/${id}`, { paid });
 }
 
+// ---- 遺失物協尋（H2 admin 總覽）----
+
+export type LostItemStatus = 'open' | 'found' | 'paid' | 'returned' | 'closed';
+
+export interface LostItem {
+  id: number;
+  ride_id: number;
+  customer_id: number;
+  customer_name: string;
+  driver_id: number;
+  driver_name: string;
+  description: string;
+  fee_cents: number; // 建單當下快照：該趟車資 × 處理費%
+  fee_bps: number;
+  status: LostItemStatus;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 協尋單總覽（viewer）；status 省略為全部。 */
+export async function fetchLostItems(status?: LostItemStatus): Promise<LostItem[]> {
+  const { data } = await api.get<{ lost_items: LostItem[] }>('/admin/lost-items', {
+    params: status ? { status } : undefined,
+  });
+  return data.lost_items ?? [];
+}
+
+// ---- 行程對話稽核（H1，admin 唯讀）----
+
+export interface RideMessage {
+  id: number;
+  ride_id: number;
+  sender_role: 'customer' | 'driver';
+  sender_id: number;
+  body: string;
+  created_at: string;
+}
+
+/** 行程內對話紀錄（admin 唯讀稽核）。 */
+export async function fetchRideMessages(rideId: number): Promise<RideMessage[]> {
+  const { data } = await api.get<{ messages: RideMessage[] }>(`/rides/${rideId}/messages`);
+  return data.messages ?? [];
+}
+
 export async function fetchFeeSettings(): Promise<FeeSettings> {
   const { data } = await api.get<FeeSettings>('/admin/settings/fees');
   return data;

@@ -65,6 +65,9 @@ src/
 | 月報表 | `GET /api/admin/reports/monthly?month=YYYY-MM` |
 | 派單參數 | `GET/PUT /api/admin/settings/dispatch` |
 | 費率設定 | `GET/PUT /api/admin/settings/fees`（superadmin） |
+| 會費帳單 | `GET /api/admin/membership-invoices?month=`、`POST …/generate`、`PATCH …/:id`（後兩者 superadmin） |
+| 遺失物協尋 | `GET /api/admin/lost-items?status=`（viewer 唯讀） |
+| 訂單詳情對話稽核 | `GET /api/rides/:id/messages`（admin 唯讀） |
 | 使用者管理 | `GET/POST /api/admin/admins`、`PATCH /api/admin/admins/:id`（superadmin） |
 
 後台用**帳號 + 密碼**登入；角色分 `viewer`／`dispatcher`／`superadmin`（前端 `RequireRole` + 後端雙重把關）。管理員由後端環境變數 `ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD` 種子建立。
@@ -190,7 +193,9 @@ VITE_WS_BASE=wss://api.example.com
 - **手續費／會費／報表**（G1–G3）：費率設定頁、日報表金額欄位、月營運報表（應付總公司），與後端 F 系列＋App 端三端對帳通過。
   費率設定頁另含「遺失物協尋處理費（%）」（2026-07-13）——乘客申請協尋時按該趟車資此比例收處理費，金額建單當下快照。
 - **訂單伺服器端分頁**：日期／關鍵字／分頁全走後端 `GET /api/admin/rides`（`offset`/`from`/`to`/`q`/`total`）。
+- **遺失物協尋後台**（2026-07-15）：`/lost-items` 總覽（狀態篩選、處理費快照、行程連結）＋
+  訂單詳情「行程對話（稽核）」卡（admin 唯讀聊天紀錄）。
 - **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`）、Skeleton 載入、WS 斷線重連。
-- **工程**：路由 code-splitting、Vitest（23 檔 96 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
+- **工程**：路由 code-splitting、Vitest（24 檔 102 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
 
 **待辦（低優先／依賴外部）**：統一錯誤處理層再涵蓋 query 讀取錯誤、RBAC 多角色細分、審計日誌 UI、i18n、E2E（Playwright/Cypress）、前端 Docker 化與部署 workflow。

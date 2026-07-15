@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 
 import OrderDetailPage from './OrderDetailPage';
 import { setRole } from '../auth/auth';
@@ -7,6 +7,7 @@ import { renderWithProviders } from '../test/render';
 
 const mockFetchRideDetail = vi.fn();
 const mockCancelRideByAdmin = vi.fn();
+const mockFetchRideMessages = vi.fn();
 
 vi.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}));
 
@@ -42,6 +43,7 @@ vi.mock('../api/admin', async () => {
     ...actual,
     fetchRideDetail: (...args: unknown[]) => mockFetchRideDetail(...args),
     cancelRideByAdmin: (...args: unknown[]) => mockCancelRideByAdmin(...args),
+    fetchRideMessages: (...args: unknown[]) => mockFetchRideMessages(...args),
   };
 });
 
@@ -49,6 +51,7 @@ describe('OrderDetailPage', () => {
   beforeEach(() => {
     mockFetchRideDetail.mockReset();
     mockCancelRideByAdmin.mockReset();
+    mockFetchRideMessages.mockReset().mockResolvedValue([]);
     mockCancelRideByAdmin.mockResolvedValue('訂單已取消');
     mockFetchRideDetail.mockResolvedValue({
       ride: {
@@ -130,6 +133,35 @@ describe('OrderDetailPage', () => {
     expect(screen.getByText('軌跡回放')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /播放/ })).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
+  });
+
+  it('顯示行程對話稽核紀錄', async () => {
+    mockFetchRideMessages.mockResolvedValue([
+      { id: 1, ride_id: 1, sender_role: 'customer', sender_id: 10, body: '司機你好，我在 7-11 門口', created_at: '2026-07-06T14:53:14+08:00' },
+      { id: 2, ride_id: 1, sender_role: 'driver', sender_id: 2, body: '好的，兩分鐘到', created_at: '2026-07-06T14:53:20+08:00' },
+    ]);
+
+    renderWithProviders(<OrderDetailPage />, { route: '/orders/1', path: '/orders/:id' });
+
+    await waitFor(() => {
+      expect(screen.getByText('司機你好，我在 7-11 門口')).toBeInTheDocument();
+    });
+    expect(screen.getByText('好的，兩分鐘到')).toBeInTheDocument();
+    // 狀態時間軸的 actor Tag 也會出現「乘客 #10」，故限定在對話卡片內查
+    const chatCard = screen
+      .getByText(/行程對話（稽核） · 2 則/)
+      .closest('.ant-card') as HTMLElement;
+    expect(within(chatCard).getByText('乘客 #10')).toBeInTheDocument();
+    expect(within(chatCard).getByText('司機 #2')).toBeInTheDocument();
+  });
+
+  it('無對話紀錄顯示空狀態', async () => {
+    renderWithProviders(<OrderDetailPage />, { route: '/orders/1', path: '/orders/:id' });
+
+    await waitFor(() => {
+      expect(screen.getByText('訂單 #1')).toBeInTheDocument();
+    });
+    expect(screen.getByText('此行程無對話紀錄')).toBeInTheDocument();
   });
 
   it('讀取失敗顯示錯誤', async () => {
