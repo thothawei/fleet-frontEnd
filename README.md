@@ -195,7 +195,7 @@ VITE_WS_BASE=wss://api.example.com
 - **訂單伺服器端分頁**：日期／關鍵字／分頁全走後端 `GET /api/admin/rides`（`offset`/`from`/`to`/`q`/`total`）。
 - **遺失物協尋後台**（2026-07-15）：`/lost-items` 總覽（狀態篩選、處理費快照、行程連結）＋
   訂單詳情「行程對話（稽核）」卡（admin 唯讀聊天紀錄）。
-- **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`）、Skeleton 載入、WS 斷線重連。
-- **工程**：路由 code-splitting、Vitest（24 檔 102 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
+- **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`，mutation＋query 讀取失敗全域提示）、Skeleton 載入、WS 斷線重連。
+- **工程**：路由 code-splitting、Vitest（25 檔 107 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
 
-**待辦（低優先／依賴外部）**：統一錯誤處理層再涵蓋 query 讀取錯誤、RBAC 多角色細分、審計日誌 UI、i18n、E2E（Playwright/Cypress）、前端 Docker 化與部署 workflow。
+**待辦（低優先／依賴外部）**：RBAC 多角色細分、審計日誌 UI、i18n、E2E（Playwright/Cypress）、前端 Docker 化與部署 workflow。
