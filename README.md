@@ -198,4 +198,19 @@ VITE_WS_BASE=wss://api.example.com
 - **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`，mutation＋query 讀取失敗全域提示）、Skeleton 載入、WS 斷線重連。
 - **工程**：路由 code-splitting、Vitest（25 檔 107 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
 
+### 規劃中（尚未實作）
+
+> 2026-07-16 加入的需求，**都還沒實作**，且**依賴後端 API 先行**。
+> 跨端主規格見 [line-fleet-dispatch/docs/TODO.md](../line-fleet-dispatch/docs/TODO.md) 的 N／O 章節；
+> admin 端工作見 [docs/TODO.md](docs/TODO.md)「五之二」。
+
+- **多乘客／多停靠點**：訂單詳情要依序列出各停靠點（最多 5 位乘客、10 個停靠點）並在地圖標多點
+  （現行只有上／下車兩點＋軌跡回放）。
+- **司機車輛資訊**：司機列表／詳情顯示車種（選單值 code → 顯示名稱）與車牌；車牌納入搜尋、可依車種篩選。
+  訂單詳情要顯示**當時的車輛快照**（而非司機現在的車，否則換車後對不上）。
+- **寵物車清潔費**：費率設定頁加「寵物車清潔費（%）」，**前端擋 0–30%**
+  （後端有 DB CHECK ≤ 3000 bps 為最後防線），比照既有「遺失物協尋處理費（%）」。
+  報表是否分項顯示清潔費，取決於後端「是否計入營業額／抽成」的拍板。
+  沿用既有原則：**金額由後端定格，admin 只呈現，勿在前端算錢**。
+
 **待辦（低優先／依賴外部）**：RBAC 多角色細分、審計日誌 UI、i18n、E2E（Playwright/Cypress）、前端 Docker 化與部署 workflow。
