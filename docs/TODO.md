@@ -206,8 +206,14 @@ CI 慢於本機，才會踩中這個時間差。
    驗收：tsc/oxlint/build 綠、Vitest 102 passed（新增 6 案）；docker E2E 真瀏覽器——登入後
    `/lost-items` 列表逐欄正確（NT$ 8.50＝850 分快照、已尋獲、進行中 1）、行程連結導到訂單詳情、
    詳情頁對話稽核 8 則齊全；API 層 status 篩選/400/401 亦驗過（見 dispatch TODO H4）。
-2. **query 讀取錯誤一致化**：目前 mutation 錯誤走共用 `apiError`，但 query（讀取）失敗各頁自行處理
-   （Reports/Monthly 用 inline Alert、其餘靜默）。可評估 QueryCache 全域 `onError`，但要避免與 inline Alert 重複。
+2. ~~query 讀取錯誤一致化~~ ✅ 2026-07-16：`src/queryClient.ts` `createQueryClient()` 以 QueryCache 全域
+   `onError` 統一提示（走共用 `apiError`、固定 message key 防多 query 同倒時洗版）；antd message 實例經
+   `GlobalMessageBridge`（App.useApp() → `utils/globalMessage.ts`）供 React 樹外使用，不走已棄用的靜態 message。
+   已有 inline Alert 的 Reports/Monthly 以 `meta: { suppressGlobalError: true }` 退出避免雙重提示；
+   401 交給 axios interceptor（導回登入）不再提示。驗收：Vitest 107 passed（新增 5 案）＋真瀏覽器
+   對 docker 後端實跑——停後端後進司機頁出「伺服器發生錯誤」toast、日報表頁只出 inline Alert 無 toast。
+   坑：內嵌瀏覽器 `visibilityState=hidden` 會讓 react-query v5 暫停重試（focusManager），query 卡 paused
+   永不 settle、onError 不觸發——驗收時要 `focusManager.setFocused(true)` 或用可見分頁，非接線 bug。
 3. **RBAC 多角色細分 / 審計日誌 UI**：依後端 `ride_events` 與角色權限開對應畫面。
 4. **產品化**：i18n、E2E（Playwright/Cypress）、前端 Docker 化（nginx 靜態映像）＋部署 workflow、runtime config 注入。
 5. ~~會費帳單 UI~~ ✅ 2026-07-12。`MembershipInvoicesPage`（`/membership-invoices`，側欄入口）：

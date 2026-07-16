@@ -17,6 +17,8 @@ export default function MonthlyReportPage() {
   const { data: rows = [], isLoading, isError } = useQuery({
     queryKey: ['monthly-report', monthStr],
     queryFn: () => fetchMonthlyReport(monthStr),
+    // 本頁有 inline Alert 呈現讀取失敗，退出全域 query 錯誤提示避免雙重訊息
+    meta: { suppressGlobalError: true },
   });
 
   const totals = useMemo(
