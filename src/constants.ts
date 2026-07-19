@@ -19,6 +19,23 @@ export const DRIVER_STATUS: Record<number, { label: string; color: string }> = {
 /** 後端 DriverStatusDisabled */
 export const DRIVER_STATUS_DISABLED = 3;
 
+/** 車種顯示名（對齊後端 constants/vehicle.go 的 code） */
+export const VEHICLE_TYPE_LABEL: Record<string, string> = {
+  sedan: '轎車',
+  suv: '休旅車',
+  van7: '七人座',
+  accessible: '無障礙車',
+  pet: '寵物用車',
+};
+
+/** 車輛審核狀態（O5，對齊後端 constants.VehicleReview*） */
+export const VEHICLE_REVIEW_STATUS: Record<string, { label: string; color: string }> = {
+  '': { label: '未填車輛', color: 'default' },
+  pending: { label: '待審核', color: 'warning' },
+  approved: { label: '已核准', color: 'success' },
+  rejected: { label: '已退回', color: 'error' },
+};
+
 /** 後台可強制取消的訂單狀態（已上車/已完成/已取消不可） */
 export function isRideCancellable(status: number): boolean {
   return status >= 0 && status <= 2;

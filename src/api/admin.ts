@@ -22,6 +22,10 @@ export interface Driver {
   Name: string;
   Phone: string;
   Status: number; // 0=離線 1=待命 2=載客中
+  VehicleType: string; // 車種 code（O1）；'' 為未填
+  PlateNumber: string; // 車牌（O1）；'' 為未填
+  VehicleReviewStatus: string; // 審核狀態（O5）：''/pending/approved/rejected
+  VehicleReviewNote: string; // 退回原因（O5）
   CreatedAt: string; // 後端回傳的 ISO 時間字串；缺值為空字串
   UpdatedAt: string;
 }
@@ -164,6 +168,10 @@ export function normalizeDriver(raw: Record<string, unknown>): Driver {
     Name: str(raw, 'Name', 'name'),
     Phone: str(raw, 'Phone', 'phone'),
     Status: num(raw, 'Status', 'status'),
+    VehicleType: str(raw, 'VehicleType', 'vehicle_type'),
+    PlateNumber: str(raw, 'PlateNumber', 'plate_number'),
+    VehicleReviewStatus: str(raw, 'VehicleReviewStatus', 'vehicle_review_status'),
+    VehicleReviewNote: str(raw, 'VehicleReviewNote', 'vehicle_review_note'),
     CreatedAt: str(raw, 'CreatedAt', 'created_at'),
     UpdatedAt: str(raw, 'UpdatedAt', 'updated_at'),
   };
@@ -409,6 +417,19 @@ export interface DispatchSettings {
 export async function patchDriverStatus(id: number, enabled: boolean): Promise<Driver> {
   const { data } = await api.patch<{ driver: Driver }>(`/admin/drivers/${id}/status`, { enabled });
   return data.driver;
+}
+
+// 車輛審核（O5）：approve=false 時 note 必填（退回原因）。回傳正規化前的 raw driver。
+export async function reviewDriverVehicle(
+  id: number,
+  approve: boolean,
+  note = '',
+): Promise<Driver> {
+  const { data } = await api.post<{ driver: Record<string, unknown> }>(
+    `/admin/drivers/${id}/vehicle-review`,
+    { approve, note },
+  );
+  return normalizeDriver(data.driver);
 }
 
 export async function fetchDispatchSettings(): Promise<DispatchSettings> {
