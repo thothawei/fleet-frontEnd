@@ -13,6 +13,7 @@ import {
   normalizeDriver,
   parseTrackCoordinates,
   patchDriverStatus,
+  reviewDriverVehicle,
   updateAdmin,
   updateDispatchSettings,
   updateFeeSettings,
@@ -77,6 +78,10 @@ describe('normalizeDriver', () => {
       Name: '司機A',
       Phone: '0912',
       Status: 1,
+      VehicleType: '',
+      PlateNumber: '',
+      VehicleReviewStatus: '',
+      VehicleReviewNote: '',
       CreatedAt: '2026-07-11T13:09:08+08:00',
       UpdatedAt: '2026-07-11T16:46:44+08:00',
     });
@@ -97,9 +102,31 @@ describe('normalizeDriver', () => {
       Name: '司機B',
       Phone: '',
       Status: 3,
+      VehicleType: '',
+      PlateNumber: '',
+      VehicleReviewStatus: '',
+      VehicleReviewNote: '',
       CreatedAt: '2026-07-10T00:00:00Z',
       UpdatedAt: '2026-07-10T01:00:00Z',
     });
+  });
+
+  it('解析車輛與審核欄位（O5）', () => {
+    const d = normalizeDriver({
+      ID: 5,
+      LineUserID: 'l',
+      Name: 'D',
+      Phone: '',
+      Status: 1,
+      vehicle_type: 'pet',
+      plate_number: 'PET-0001',
+      vehicle_review_status: 'rejected',
+      vehicle_review_note: '車牌照片模糊',
+    });
+    expect(d.VehicleType).toBe('pet');
+    expect(d.PlateNumber).toBe('PET-0001');
+    expect(d.VehicleReviewStatus).toBe('rejected');
+    expect(d.VehicleReviewNote).toBe('車牌照片模糊');
   });
 
   it('缺時間欄位時回空字串', () => {
@@ -254,6 +281,33 @@ describe('P2 admin write APIs', () => {
     const driver = await patchDriverStatus(1, false);
     expect(api.patch).toHaveBeenCalledWith('/admin/drivers/1/status', { enabled: false });
     expect(driver.Status).toBe(3);
+  });
+
+  it('reviewDriverVehicle 核准', async () => {
+    vi.mocked(api.post).mockResolvedValue({
+      data: { driver: { ID: 4, Name: 'A', LineUserID: 'U4', Status: 0, vehicle_review_status: 'approved' } },
+    });
+    const driver = await reviewDriverVehicle(4, true);
+    expect(api.post).toHaveBeenCalledWith('/admin/drivers/4/vehicle-review', { approve: true, note: '' });
+    expect(driver.VehicleReviewStatus).toBe('approved');
+  });
+
+  it('reviewDriverVehicle 退回帶原因', async () => {
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        driver: {
+          ID: 4, Name: 'A', LineUserID: 'U4', Status: 0,
+          vehicle_review_status: 'rejected', vehicle_review_note: '車牌模糊',
+        },
+      },
+    });
+    const driver = await reviewDriverVehicle(4, false, '車牌模糊');
+    expect(api.post).toHaveBeenCalledWith('/admin/drivers/4/vehicle-review', {
+      approve: false,
+      note: '車牌模糊',
+    });
+    expect(driver.VehicleReviewStatus).toBe('rejected');
+    expect(driver.VehicleReviewNote).toBe('車牌模糊');
   });
 
   it('fetchDispatchSettings', async () => {

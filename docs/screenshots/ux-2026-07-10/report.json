@@ -1,0 +1,62 @@
+{
+  "date": "2026-07-10",
+  "base": "http://localhost:5173",
+  "rideId": "4",
+  "passed": 6,
+  "failed": 1,
+  "results": [
+    {
+      "page": "01-login",
+      "url": "http://localhost:5173/login",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/ux-2026-07-10/01-login.png",
+      "status": "pass",
+      "notes": ""
+    },
+    {
+      "page": "02-dashboard",
+      "url": "http://localhost:5173/",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/ux-2026-07-10/02-dashboard.png",
+      "status": "pass",
+      "notes": ""
+    },
+    {
+      "page": "03-fleet",
+      "url": "http://localhost:5173/fleet",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/ux-2026-07-10/03-fleet.png",
+      "status": "pass",
+      "notes": "",
+      "mapCanvas": true
+    },
+    {
+      "page": "04-orders",
+      "url": "http://localhost:5173/orders",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/ux-2026-07-10/04-orders.png",
+      "status": "pass",
+      "notes": "",
+      "tableRows": 0
+    },
+    {
+      "page": "05-order-detail",
+      "url": "http://localhost:5173/orders/4",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/ux-2026-07-10/05-order-detail.png",
+      "status": "fail",
+      "notes": "page.waitForSelector: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator('text=訂單 #') to be visible\n"
+    },
+    {
+      "page": "06-drivers",
+      "url": "http://localhost:5173/drivers",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/ux-2026-07-10/06-drivers.png",
+      "status": "pass",
+      "notes": "",
+      "tableRows": 0
+    },
+    {
+      "page": "07-reports",
+      "url": "http://localhost:5173/reports",
+      "screenshot": "/Users/mac/Documents/line-fleet-admin/docs/screenshots/ux-2026-07-10/07-reports.png",
+      "status": "pass",
+      "notes": "",
+      "tableRows": 0
+    }
+  ]
+}
