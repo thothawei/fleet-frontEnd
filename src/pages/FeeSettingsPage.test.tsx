@@ -32,6 +32,7 @@ const defaultFees = {
   commission_bps: 1500,
   monthly_membership_fee_cents: 300000,
   lost_item_fee_bps: 1000,
+  pet_cleaning_fee_bps: 2000, // 20%（O6，上限 30%）
 };
 
 describe('FeeSettingsPage', () => {
@@ -75,6 +76,24 @@ describe('FeeSettingsPage', () => {
     expect(body.base_fare_cents).toBe(8500); // 85 元 → 8500 分
     expect(body.monthly_membership_fee_cents).toBe(300000);
     expect(body.lost_item_fee_bps).toBe(1000); // 10% → 1000 bps
+    expect(body.pet_cleaning_fee_bps).toBe(2000); // 20% → 2000 bps
+  });
+
+  it('寵物車清潔費：載入 bps→%，且擋掉超過 30% 的值', async () => {
+    saveSession('tok', '管理員', 'superadmin');
+    const user = userEvent.setup();
+    renderWithProviders(<FeeSettingsPage />);
+
+    // 2000 bps → 20.00 %
+    const cleaning = await screen.findByDisplayValue('20.00');
+    await user.clear(cleaning);
+    await user.type(cleaning, '35');
+    await user.click(await screen.findByRole('button', { name: /儲\s*存/ }));
+
+    // 上限是乘客實際被加收的錢：InputNumber 的 max 會把超額值夾回 30%，
+    // 送出去的一定不超過 3000 bps（後端 DB CHECK 只是最後防線，不該靠它擋）
+    await vi.waitFor(() => expect(mockUpdateFeeSettings).toHaveBeenCalled());
+    expect(mockUpdateFeeSettings.mock.calls[0][0].pet_cleaning_fee_bps).toBe(3000);
   });
 
   it('非 superadmin 時儲存鈕停用', async () => {

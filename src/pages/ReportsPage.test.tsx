@@ -28,6 +28,11 @@ describe('ReportsPage', () => {
         trip_count: 2,
         total_distance_m: 5000,
         avg_pickup_sec: 120,
+        // O6：清潔費不進營業額、不進抽成，但含在實得裡（170 − 25 + 30 = 175）
+        total_revenue_cents: 17000,
+        total_commission_cents: 2500,
+        total_cleaning_fee_cents: 3000,
+        driver_net_cents: 17500,
       },
     ]);
   });
@@ -59,7 +64,18 @@ describe('ReportsPage', () => {
     const [filename, csv] = mockDownloadCsv.mock.calls[0] as [string, string];
     expect(filename).toMatch(/^日報表-\d{4}-\d{2}-\d{2}\.csv$/);
     expect(csv).toContain('司機ID,司機,趟數,總里程(km),平均接客(分)');
-    expect(csv).toContain('1,測試司機,2,5.00,2.0');
+    expect(csv).toContain('清潔費(元)');
+    expect(csv).toContain('1,測試司機,2,5.00,2.0,170,25,30,175');
+  });
+
+  it('清潔費分項讓「營業額 − 手續費 + 清潔費 = 實得」對得起來', async () => {
+    renderWithProviders(<ReportsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('測試司機')).toBeInTheDocument();
+    });
+    // 少了這一欄，170 − 25 = 145 對不上實得 175（月報表早就有，日報表原本漏了）
+    expect(screen.getAllByText('NT$ 30').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NT$ 175').length).toBeGreaterThan(0);
   });
 
   it('沒有資料時匯出鈕停用', async () => {

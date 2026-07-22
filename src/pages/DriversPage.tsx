@@ -21,11 +21,20 @@ const STATUS_OPTIONS = [
   ...Object.entries(DRIVER_STATUS).map(([value, meta]) => ({ value, label: meta.label })),
 ];
 
+// 車種篩選（O1）。'none' 是「還沒填車輛」——這群人接不了單（O3/O5 gate），
+// 是實際會被找的一群，不能只給五個車種而漏掉他們。
+const VEHICLE_TYPE_OPTIONS = [
+  { value: 'all', label: '全部車種' },
+  ...Object.entries(VEHICLE_TYPE_LABEL).map(([value, label]) => ({ value, label })),
+  { value: 'none', label: '未填車輛' },
+];
+
 export default function DriversPage() {
   const queryClient = useQueryClient();
   const { message, modal } = App.useApp();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [vehicleFilter, setVehicleFilter] = useState('all');
 
   const { data: drivers = [], isLoading } = useQuery({
     queryKey: ['drivers'],
@@ -40,6 +49,11 @@ export default function DriversPage() {
       } else if (statusFilter !== 'all' && String(d.Status) !== statusFilter) {
         return false;
       }
+      if (vehicleFilter === 'none') {
+        if (d.VehicleType) return false;
+      } else if (vehicleFilter !== 'all' && d.VehicleType !== vehicleFilter) {
+        return false;
+      }
       if (!kw) return true;
       return (
         d.Name.toLowerCase().includes(kw) ||
@@ -47,7 +61,7 @@ export default function DriversPage() {
         d.PlateNumber.toLowerCase().includes(kw)
       );
     });
-  }, [drivers, keyword, statusFilter]);
+  }, [drivers, keyword, statusFilter, vehicleFilter]);
 
   const pendingCount = useMemo(
     () => drivers.filter((d) => d.VehicleReviewStatus === 'pending').length,
@@ -241,6 +255,12 @@ export default function DriversPage() {
           style={{ width: 140 }}
           options={STATUS_OPTIONS}
           onChange={setStatusFilter}
+        />
+        <Select
+          value={vehicleFilter}
+          style={{ width: 140 }}
+          options={VEHICLE_TYPE_OPTIONS}
+          onChange={setVehicleFilter}
         />
       </Space>
       <Table
