@@ -50,6 +50,8 @@ export interface DailyReportRow {
   // 金額欄位（分），後端 F5 起提供；顯示時除 100。
   total_revenue_cents: number;
   total_commission_cents: number;
+  /** 寵物車清潔費合計（O6）：不計入營業額與抽成，但含在司機實得裡 */
+  total_cleaning_fee_cents: number;
   driver_net_cents: number;
 }
 
@@ -60,9 +62,11 @@ export interface MonthlyReportRow {
   trip_count: number;
   total_revenue_cents: number;
   total_commission_cents: number;
+  /** 寵物車清潔費合計（O6）：不計入營業額與抽成，但含在司機實得裡 */
+  total_cleaning_fee_cents: number;
   driver_net_cents: number;
   membership_fee_cents: number;
-  owed_to_hq_cents: number; // 應付總公司 = 手續費 + 月會費
+  owed_to_hq_cents: number; // 應付總公司 = 手續費 + 月會費（不受清潔費影響）
 }
 
 // 費率設定（後端 F1/F4）。金額為「分」，手續費為基點 bps（1500 = 15%）。
@@ -74,6 +78,8 @@ export interface FeeSettings {
   monthly_membership_fee_cents: number;
   /** 遺失物協尋處理費（bps，1000 = 10%），對該趟車資抽成，建單時快照 */
   lost_item_fee_bps: number;
+  /** 寵物車清潔費（bps，上限 3000 = 30%，DB CHECK 兜底）；依**乘客指定車種**加收，非司機車種 */
+  pet_cleaning_fee_bps: number;
 }
 
 // 對齊後端 model.GeoPoint（2026-07-08 後端補了 json tag，欄位改 snake_case）
@@ -99,8 +105,38 @@ export interface RideFull {
   completed_at: string | null;
   distance_m: number | null;
   eta_pickup_sec: number | null;
+  /** 乘客**指定**的車種 code（P1）；'' ＝不指定。這是清潔費加收與否的依據 */
+  required_vehicle_type: string;
+  /** 接單當下的司機車輛快照（O7）；'' ＝尚未接單。與 required_vehicle_type 是兩回事 */
+  driver_vehicle_type: string;
+  driver_plate_number: string;
+  /** 完成時定格的金額（分）；未完成／取消為 null */
+  fare_amount_cents: number | null;
+  commission_amount_cents: number | null;
+  driver_net_amount_cents: number | null;
+  /** 寵物車清潔費（O6）；只有乘客指定 pet 的行程才有值 */
+  cleaning_fee_cents: number | null;
   created_at: string;
   updated_at: string;
+}
+
+/** 停靠點種類（後端 constants.StopKind*） */
+export type StopKind = 'pickup' | 'dropoff';
+
+/**
+ * 單一停靠點（N）。形狀與司機／乘客端完全相同（後端共用 service.StopViews）——
+ * arrived_at／skipped_at 皆缺席＝尚未處理，兩者互斥。
+ */
+export interface RideStop {
+  id: number;
+  seq: number;
+  kind: StopKind;
+  lat: number;
+  lng: number;
+  passenger_label: string;
+  address: string;
+  arrived_at: string | null;
+  skipped_at: string | null;
 }
 
 /** 訂單狀態審計（對齊後端 ride_events / D4） */
@@ -120,6 +156,8 @@ export interface RideDetail {
   ride: RideFull;
   track_geojson: string;
   events: RideEvent[];
+  /** 多停靠點行程（N）才有；單點訂單為空陣列 */
+  stops: RideStop[];
 }
 
 // 軌跡 GeoJSON：admin 端點回傳裸 LineString；司機/乘客端點包成 Feature
@@ -221,11 +259,29 @@ export async function fetchRideDetail(id: number): Promise<RideDetail> {
     ride: Record<string, unknown>;
     track_geojson: string;
     events?: Record<string, unknown>[];
+    stops?: Record<string, unknown>[];
   }>(`/admin/rides/${id}`);
   return {
     ride: normalizeRide(data.ride),
     track_geojson: data.track_geojson,
     events: (data.events ?? []).map(normalizeRideEvent),
+    // 單點訂單後端不帶 stops 鍵（omitempty），缺席＝沒有停靠點，不是錯誤
+    stops: (data.stops ?? []).map(normalizeRideStop),
+  };
+}
+
+/** 停靠點只走 snake_case（後端以 map 手工序列化），故不需 PascalCase 兼容 */
+export function normalizeRideStop(raw: Record<string, unknown>): RideStop {
+  return {
+    id: num(raw, 'id'),
+    seq: num(raw, 'seq'),
+    kind: (str(raw, 'kind') || 'pickup') as StopKind,
+    lat: num(raw, 'lat'),
+    lng: num(raw, 'lng'),
+    passenger_label: str(raw, 'passenger_label'),
+    address: str(raw, 'address'),
+    arrived_at: nullableStr(raw, 'arrived_at'),
+    skipped_at: nullableStr(raw, 'skipped_at'),
   };
 }
 
@@ -265,6 +321,13 @@ function normalizeRide(raw: Record<string, unknown>): RideFull {
     completed_at: nullableStr(raw, 'completed_at', 'CompletedAt'),
     distance_m: nullableNum(raw, 'distance_m', 'DistanceM'),
     eta_pickup_sec: nullableNum(raw, 'eta_pickup_sec', 'EtaPickupSec'),
+    required_vehicle_type: str(raw, 'required_vehicle_type', 'RequiredVehicleType'),
+    driver_vehicle_type: str(raw, 'driver_vehicle_type', 'DriverVehicleType'),
+    driver_plate_number: str(raw, 'driver_plate_number', 'DriverPlateNumber'),
+    fare_amount_cents: nullableNum(raw, 'fare_amount_cents', 'FareAmountCents'),
+    commission_amount_cents: nullableNum(raw, 'commission_amount_cents', 'CommissionAmountCents'),
+    driver_net_amount_cents: nullableNum(raw, 'driver_net_amount_cents', 'DriverNetAmountCents'),
+    cleaning_fee_cents: nullableNum(raw, 'cleaning_fee_cents', 'CleaningFeeCents'),
     created_at: str(raw, 'created_at', 'CreatedAt'),
     updated_at: str(raw, 'updated_at', 'UpdatedAt'),
   };

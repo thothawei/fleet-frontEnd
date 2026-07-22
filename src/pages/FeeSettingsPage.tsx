@@ -14,7 +14,11 @@ interface FeeFormValues {
   commission_pct: number;
   monthly_membership_fee: number;
   lost_item_fee_pct: number;
+  pet_cleaning_fee_pct: number;
 }
+
+/** 寵物車清潔費上限（O6 拍板 30%）；後端 DB CHECK `chk_fleet_settings_pet_cleaning_fee_bps` 為最後防線 */
+const PET_CLEANING_FEE_MAX_PCT = 30;
 
 function toForm(s: FeeSettings): FeeFormValues {
   return {
@@ -24,6 +28,7 @@ function toForm(s: FeeSettings): FeeFormValues {
     commission_pct: s.commission_bps / 100,
     monthly_membership_fee: s.monthly_membership_fee_cents / 100,
     lost_item_fee_pct: s.lost_item_fee_bps / 100,
+    pet_cleaning_fee_pct: (s.pet_cleaning_fee_bps ?? 0) / 100,
   };
 }
 
@@ -35,6 +40,7 @@ function toApi(v: FeeFormValues): Partial<FeeSettings> {
     commission_bps: Math.round(v.commission_pct * 100),
     monthly_membership_fee_cents: Math.round(v.monthly_membership_fee * 100),
     lost_item_fee_bps: Math.round(v.lost_item_fee_pct * 100),
+    pet_cleaning_fee_bps: Math.round(v.pet_cleaning_fee_pct * 100),
   };
 }
 
@@ -132,6 +138,23 @@ export default function FeeSettingsPage() {
           rules={[{ required: true, message: '請填寫遺失物處理費百分比' }, { type: 'number', min: 0, max: 100 }]}
         >
           <InputNumber min={0} max={100} precision={2} suffix="%" style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item
+          name="pet_cleaning_fee_pct"
+          label={`寵物車清潔費（%，上限 ${PET_CLEANING_FEE_MAX_PCT}%）`}
+          tooltip="依乘客指定的車種加收（不是司機開的車種）：乘客指定「寵物用車」時，按該趟車資的此比例加收清潔費。金額於行程完成當下快照，調整不影響歷史行程。清潔費不計入抽成、不計入營業額，全額歸司機。"
+          rules={[
+            { required: true, message: '請填寫寵物車清潔費百分比' },
+            { type: 'number', min: 0, max: PET_CLEANING_FEE_MAX_PCT, message: `需介於 0 與 ${PET_CLEANING_FEE_MAX_PCT}% 之間` },
+          ]}
+        >
+          <InputNumber
+            min={0}
+            max={PET_CLEANING_FEE_MAX_PCT}
+            precision={2}
+            suffix="%"
+            style={{ width: '100%' }}
+          />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={mutation.isPending} disabled={!isSuperadmin()}>

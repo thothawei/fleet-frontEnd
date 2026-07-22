@@ -32,7 +32,7 @@ export default function ReportsPage() {
 
   function handleExport() {
     const csv = toCsv(
-      ['司機ID', '司機', '趟數', '總里程(km)', '平均接客(分)', '營業額(元)', '手續費(元)', '司機實得(元)'],
+      ['司機ID', '司機', '趟數', '總里程(km)', '平均接客(分)', '營業額(元)', '手續費(元)', '清潔費(元)', '司機實得(元)'],
       rows.map((r) => [
         r.driver_id,
         r.driver_name,
@@ -41,6 +41,7 @@ export default function ReportsPage() {
         (r.avg_pickup_sec / 60).toFixed(1),
         yuanForCsv(r.total_revenue_cents),
         yuanForCsv(r.total_commission_cents),
+        yuanForCsv(r.total_cleaning_fee_cents ?? 0),
         yuanForCsv(r.driver_net_cents),
       ]),
     );
@@ -75,6 +76,15 @@ export default function ReportsPage() {
       width: 140,
       align: 'right',
       render: (c: number) => fmtYuan(c),
+    },
+    {
+      // O6：清潔費不計入營業額、不計入抽成，但含在司機實得裡。
+      // 少了這一欄，「營業額 − 手續費」會莫名對不上實得，客服無從解釋差額。
+      title: '清潔費',
+      dataIndex: 'total_cleaning_fee_cents',
+      width: 130,
+      align: 'right',
+      render: (c: number) => fmtYuan(c ?? 0),
     },
     {
       title: '司機實得',
