@@ -59,8 +59,8 @@ src/
 | 營運總覽 | `GET /api/admin/rides` + `GET /api/admin/drivers` + `GET /api/admin/fleet`（組合 KPI） |
 | 即時車隊 | `GET /api/admin/fleet` + `GET /ws?token=`（`driver.location` 事件） |
 | 訂單管理 | `GET /api/admin/rides?status=&limit=&offset=&from=&to=&q=`（回 `total`，伺服器端分頁） |
-| 訂單詳情 | `GET /api/admin/rides/:id`（軌跡 GeoJSON + 事件）、`POST /api/admin/rides/:id/cancel` |
-| 司機管理 | `GET /api/admin/drivers`、`PATCH /api/admin/drivers/:id/status` |
+| 訂單詳情 | `GET /api/admin/rides/:id`（軌跡 GeoJSON + 事件 + 停靠點 + 乘客評分）、`POST /api/admin/rides/:id/cancel` |
+| 司機管理 | `GET /api/admin/drivers`（含 `rating_avg`／`rating_count`）、`PATCH /api/admin/drivers/:id/status`、`POST /api/admin/drivers/:id/vehicle-review` |
 | 日報表 | `GET /api/admin/reports/daily?date=`（含金額欄位） |
 | 月報表 | `GET /api/admin/reports/monthly?month=YYYY-MM` |
 | 派單參數 | `GET/PUT /api/admin/settings/dispatch` |
@@ -195,24 +195,26 @@ VITE_WS_BASE=wss://api.example.com
 - **訂單伺服器端分頁**：日期／關鍵字／分頁全走後端 `GET /api/admin/rides`（`offset`/`from`/`to`/`q`/`total`）。
 - **遺失物協尋後台**（2026-07-15）：`/lost-items` 總覽（狀態篩選、處理費快照、行程連結）＋
   訂單詳情「行程對話（稽核）」卡（admin 唯讀聊天紀錄）。
+- **車輛審核**（O5，2026-07-19）：司機管理頁的車輛欄、審核狀態 tag（退回附原因 tooltip）、
+  待審核列的核准／退回，以及「N 台車輛待審核」快捷篩選；搜尋含車牌。
+- **N／O／P 下游 UI**（2026-07-22）：訂單詳情的停靠點清單與多點地圖、乘客指定車種與
+  **當時車輛快照**（兩者是不同欄位）、費率設定頁的寵物車清潔費（%）與報表分項、司機車種篩選。
+- **司機評價**（B5，2026-07-27）：司機管理頁「評價」欄（平均分＋則數，**可排序、沒評分排最後**）、
+  訂單詳情「乘客評分」卡（唯讀星等＋評論；未評分整塊不顯示）。
+  串後端 `GET /api/admin/drivers` 的 `rating_avg`／`rating_count` 與 `GET /api/admin/rides/:id` 的 `rating`。
 - **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`，mutation＋query 讀取失敗全域提示）、Skeleton 載入、WS 斷線重連。
-- **工程**：路由 code-splitting、Vitest（25 檔 107 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
+- **工程**：路由 code-splitting、Vitest（25 檔 123 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
+
+> **2026-07-16 加入的 N／O／P 需求已於 2026-07-22 補完**（PR #21），
+> 上方「已完成」有逐項記錄；本段先前寫「都還沒實作」是過期資訊，2026-07-27 修正。
 
 ### 規劃中（尚未實作）
 
-> 2026-07-16 加入的需求，**都還沒實作**，且**依賴後端 API 先行**。
-> 跨端主規格見 [line-fleet-dispatch/docs/TODO.md](../line-fleet-dispatch/docs/TODO.md) 的 N／O 章節；
-> admin 端工作見 [docs/TODO.md](docs/TODO.md)「五之二」。
+> 跨端主規格見 [line-fleet-dispatch/docs/TODO.md](../line-fleet-dispatch/docs/TODO.md)；
+> admin 端工作見 [docs/TODO.md](docs/TODO.md)。
 
-- **多乘客／多停靠點**：訂單詳情要依序列出各停靠點（最多 5 位乘客、10 個停靠點）並在地圖標多點
-  （現行只有上／下車兩點＋軌跡回放）。
-- **司機車輛資訊**：司機列表／詳情顯示車種（選單值 code → 顯示名稱）與車牌；車牌納入搜尋、可依車種篩選。
-  訂單詳情要顯示**當時的車輛快照**（而非司機現在的車，否則換車後對不上）。
-- **寵物車清潔費**：費率設定頁加「寵物車清潔費（%）」，**前端擋 0–30%**
-  （後端有 DB CHECK ≤ 3000 bps 為最後防線），比照既有「遺失物協尋處理費（%）」。
-  報表是否分項顯示清潔費，取決於後端「是否計入營業額／抽成」的拍板。
-- **乘客指定車種**：訂單詳情要顯示乘客指定的車種（清潔費的觸發依據，客服要能解釋收費），
-  與「司機當時的車輛快照」是不同欄位——前者是乘客要求什麼車，後者是實際派來哪台車。
-  沿用既有原則：**金額由後端定格，admin 只呈現，勿在前端算錢**。
-
-**待辦（低優先／依賴外部）**：RBAC 多角色細分、審計日誌 UI、i18n、E2E（Playwright/Cypress）、前端 Docker 化與部署 workflow。
+- **評分的營運動作**（B5 下游）：目前只「看得到」評價，還沒有**低分司機的處理流程**
+  （通知／停權／申訴）。等實際累積評分、營運說得出要對低分司機做什麼，再開對應畫面。
+- **RBAC 多角色細分 / 審計日誌 UI**：依後端 `ride_events` 與角色權限開對應畫面。
+- **產品化**：i18n、E2E（Playwright/Cypress）、前端 Docker 化（nginx 靜態映像）＋部署 workflow、
+  runtime config 注入。
