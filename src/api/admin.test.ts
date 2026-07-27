@@ -82,6 +82,8 @@ describe('normalizeDriver', () => {
       PlateNumber: '',
       VehicleReviewStatus: '',
       VehicleReviewNote: '',
+      RatingAvg: 0,
+      RatingCount: 0,
       CreatedAt: '2026-07-11T13:09:08+08:00',
       UpdatedAt: '2026-07-11T16:46:44+08:00',
     });
@@ -106,9 +108,26 @@ describe('normalizeDriver', () => {
       PlateNumber: '',
       VehicleReviewStatus: '',
       VehicleReviewNote: '',
+      RatingAvg: 0,
+      RatingCount: 0,
       CreatedAt: '2026-07-10T00:00:00Z',
       UpdatedAt: '2026-07-10T01:00:00Z',
     });
+  });
+
+  it('解析評分彙總（B5）；舊後端缺鍵時歸零＝尚無評分', () => {
+    const rated = normalizeDriver({
+      ID: 9, LineUserID: 'l', Name: 'D', Phone: '', Status: 1,
+      rating_avg: 4.5, rating_count: 12,
+    });
+    expect(rated.RatingAvg).toBe(4.5);
+    expect(rated.RatingCount).toBe(12);
+
+    // 舊後端不帶 rating_* → 0/0，呈現端據 RatingCount===0 顯示「尚無評分」，
+    // 不需要再判一種 undefined。
+    const legacy = normalizeDriver({ ID: 10, LineUserID: 'l', Name: 'D', Phone: '', Status: 1 });
+    expect(legacy.RatingAvg).toBe(0);
+    expect(legacy.RatingCount).toBe(0);
   });
 
   it('解析車輛與審核欄位（O5）', () => {

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Breadcrumb, Timeline, Tooltip } from 'antd';
+import { App, Card, Descriptions, Tag, Spin, Empty, Button, Space, Slider, Alert, Breadcrumb, Timeline, Tooltip, Rate } from 'antd';
 import { ArrowLeftOutlined, CaretRightOutlined, PauseOutlined, StopOutlined } from '@ant-design/icons';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -97,6 +97,7 @@ export default function OrderDetailPage() {
     [data],
   );
   const stops = useMemo(() => data?.stops ?? [], [data]);
+  const rating = data?.rating ?? null;
   // 只有停靠點、還沒有軌跡的行程（尚未開始跑）也要看得到地圖
   const showMap = coordinates.length > 0 || stops.length > 0;
 
@@ -373,6 +374,27 @@ export default function OrderDetailPage() {
           ]}
         />
       </Card>
+
+      {/* 乘客評分（B5）：客服要能回答「這位乘客給了幾分、寫了什麼」。
+          **未評分時整塊不顯示**——沒評不是缺資料，留一張空卡片只會讓人以為壞了。 */}
+      {rating && (
+        <Card title="乘客評分">
+          <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <Space size={8}>
+              <Rate disabled value={rating.score} />
+              <span style={{ fontWeight: 600 }}>{rating.score} / 5</span>
+              {rating.created_at && (
+                <span style={{ color: '#999' }}>{fmtTime(rating.created_at)}</span>
+              )}
+            </Space>
+            {rating.comment ? (
+              <div style={{ whiteSpace: 'pre-wrap' }}>{rating.comment}</div>
+            ) : (
+              <span style={{ color: '#999' }}>乘客只給了星等，沒有留言</span>
+            )}
+          </Space>
+        </Card>
+      )}
 
       {/* 多停靠點（N）：單點訂單沒有 stops，整塊不顯示（不留一張空卡片） */}
       {stops.length > 0 && (

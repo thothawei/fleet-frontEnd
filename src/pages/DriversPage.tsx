@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App, Button, Card, Empty, Input, Select, Space, Switch, Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Link } from 'react-router-dom';
+import { StarFilled } from '@ant-design/icons';
 
 import { fetchDrivers, patchDriverStatus, reviewDriverVehicle, type Driver } from '../api/admin';
 import PageHeader from '../components/PageHeader';
@@ -10,6 +11,7 @@ import { canDispatch } from '../auth/auth';
 import {
   DRIVER_STATUS,
   DRIVER_STATUS_DISABLED,
+  RATING_COLOR,
   VEHICLE_REVIEW_STATUS,
   VEHICLE_TYPE_LABEL,
 } from '../constants';
@@ -190,6 +192,30 @@ export default function DriversPage() {
           tag
         );
       },
+    },
+    {
+      title: '評價',
+      width: 120,
+      // 可排序：營運要能一眼找出評價最低的司機，那正是這一欄存在的理由。
+      // **沒評分的排在最後**（不是最前）——0 則不代表差，不該混進低分名單。
+      sorter: (a: Driver, b: Driver) => {
+        if (a.RatingCount === 0 && b.RatingCount === 0) return 0;
+        if (a.RatingCount === 0) return 1;
+        if (b.RatingCount === 0) return -1;
+        return a.RatingAvg - b.RatingAvg;
+      },
+      render: (_: unknown, driver: Driver) =>
+        driver.RatingCount > 0 ? (
+          <Tooltip title={`${driver.RatingCount} 位乘客評分`}>
+            <Space size={4}>
+              <StarFilled style={{ color: RATING_COLOR(driver.RatingAvg) }} />
+              <span>{driver.RatingAvg.toFixed(1)}</span>
+              <span style={{ color: '#999' }}>({driver.RatingCount})</span>
+            </Space>
+          </Tooltip>
+        ) : (
+          <span style={{ color: '#999' }}>尚無評分</span>
+        ),
     },
     {
       title: '車輛審核',
