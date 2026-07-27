@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App, Button, Card, Empty, Input, Select, Space, Switch, Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import type { SortOrder } from 'antd/es/table/interface';
 import { Link } from 'react-router-dom';
 import { StarFilled } from '@ant-design/icons';
 
@@ -197,11 +198,16 @@ export default function DriversPage() {
       title: '評價',
       width: 120,
       // 可排序：營運要能一眼找出評價最低的司機，那正是這一欄存在的理由。
-      // **沒評分的排在最後**（不是最前）——0 則不代表差，不該混進低分名單。
-      sorter: (a: Driver, b: Driver) => {
+      // **沒評分的兩個方向都排最後**（不是最前）——0 則不代表差，不該混進低分名單。
+      //
+      // `sortOrder` 不可省：antd 做降序的方式是**把比較結果整個反轉**，
+      // 所以「沉底」的特例不跟著反轉的話，降序時沒評分的會被推到最前面
+      // （2026-07-27 實測：降序得到「新司機, 高分司機, 低分司機」）。
+      sorter: (a: Driver, b: Driver, sortOrder?: SortOrder) => {
+        const sink = sortOrder === 'descend' ? -1 : 1; // 讓「沒評分」永遠沉底
         if (a.RatingCount === 0 && b.RatingCount === 0) return 0;
-        if (a.RatingCount === 0) return 1;
-        if (b.RatingCount === 0) return -1;
+        if (a.RatingCount === 0) return sink;
+        if (b.RatingCount === 0) return -sink;
         return a.RatingAvg - b.RatingAvg;
       },
       render: (_: unknown, driver: Driver) =>
