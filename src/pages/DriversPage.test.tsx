@@ -118,3 +118,30 @@ describe('DriversPage 評價欄（B5）', () => {
     });
   });
 });
+
+describe('DriversPage 評價排序方向', () => {
+  beforeEach(() => {
+    setRole('superadmin');
+    mockFetchDrivers.mockReset();
+    mockFetchDrivers.mockResolvedValue([
+      { ID: 1, Name: '高分司機', Phone: '', LineUserID: 'l1', Status: 1, RatingAvg: 4.8, RatingCount: 25 },
+      { ID: 2, Name: '低分司機', Phone: '', LineUserID: 'l2', Status: 1, RatingAvg: 2.5, RatingCount: 4 },
+      { ID: 3, Name: '新司機', Phone: '', LineUserID: 'l3', Status: 1, RatingAvg: 0, RatingCount: 0 },
+    ]);
+  });
+
+  // 迴歸：antd 做降序是把比較結果整個反轉，特例不跟著反轉的話沒評分的會浮到最前面。
+  it('降序時沒評分的仍排最後（antd 會反轉比較結果）', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<DriversPage />);
+    await waitFor(() => expect(screen.getByText('高分司機')).toBeInTheDocument());
+
+    await user.click(screen.getByText('評價')); // 升序
+    await user.click(screen.getByText('評價')); // 降序
+
+    await waitFor(() => {
+      const names = screen.getAllByRole('row').slice(1).map((r) => r.querySelector('a')?.textContent ?? '');
+      expect(names).toEqual(['高分司機', '低分司機', '新司機']);
+    });
+  });
+});
