@@ -78,3 +78,43 @@ describe('DriversPage', () => {
     expect(screen.queryByText('寵物車司機')).not.toBeInTheDocument();
   });
 });
+
+describe('DriversPage 評價欄（B5）', () => {
+  beforeEach(() => {
+    setRole('superadmin');
+    mockFetchDrivers.mockReset();
+    mockFetchDrivers.mockResolvedValue([
+      { ID: 1, Name: '高分司機', Phone: '', LineUserID: 'l1', Status: 1, RatingAvg: 4.8, RatingCount: 25 },
+      { ID: 2, Name: '低分司機', Phone: '', LineUserID: 'l2', Status: 1, RatingAvg: 2.5, RatingCount: 4 },
+      { ID: 3, Name: '新司機', Phone: '', LineUserID: 'l3', Status: 1, RatingAvg: 0, RatingCount: 0 },
+    ]);
+  });
+
+  it('有評分顯示「平均(則數)」，沒評分顯示「尚無評分」而非 0.0', async () => {
+    renderWithProviders(<DriversPage />);
+    await waitFor(() => expect(screen.getByText('高分司機')).toBeInTheDocument());
+
+    expect(screen.getByText('4.8')).toBeInTheDocument();
+    expect(screen.getByText('(25)')).toBeInTheDocument();
+    expect(screen.getByText('2.5')).toBeInTheDocument();
+    expect(screen.getByText('尚無評分')).toBeInTheDocument();
+    // 0 則不該被渲染成 0.0 顆星——那看起來像「被評成 0 分」
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+  });
+
+  it('依評價排序：低分在前，沒評分的排最後（0 則不代表差）', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<DriversPage />);
+    await waitFor(() => expect(screen.getByText('高分司機')).toBeInTheDocument());
+
+    await user.click(screen.getByText('評價'));
+
+    await waitFor(() => {
+      const names = screen
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) => r.querySelector('a')?.textContent ?? '');
+      expect(names).toEqual(['低分司機', '高分司機', '新司機']);
+    });
+  });
+});

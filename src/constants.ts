@@ -67,3 +67,13 @@ export function rideEventLabel(eventType: string): string {
 export function actorRoleLabel(role: string): string {
   return ACTOR_ROLE_LABEL[role] ?? (role || '—');
 }
+
+/**
+ * 評分星色（B5）：低分要**一眼看得出來**，那是營運會採取行動的訊號。
+ * 門檻 3.5／4.5 是呈現用的粗分級，不參與任何計算或派單邏輯。
+ */
+export function RATING_COLOR(avg: number): string {
+  if (avg < 3.5) return '#cf1322'; // 紅：需要關注
+  if (avg < 4.5) return '#d48806'; // 黃：普通
+  return '#faad14'; // 金星：良好
+}

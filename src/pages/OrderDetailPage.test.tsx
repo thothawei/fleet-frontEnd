@@ -50,6 +50,34 @@ vi.mock('../api/admin', async () => {
   };
 });
 
+/** 評分測試用的最小訂單詳情：只需要訂單本體渲染得出來即可。 */
+function ratingFixture(rating: unknown) {
+  return {
+    ride: {
+      id: 1,
+      customer_id: 10,
+      driver_id: 2,
+      status: 4,
+      pickup_point: { lat: 25.034, lng: 121.566 },
+      pickup_address: '台北101',
+      dropoff_point: null,
+      dropoff_address: '',
+      requested_at: '2026-07-06T14:53:13+08:00',
+      accepted_at: '2026-07-06T14:53:16+08:00',
+      picked_up_at: '2026-07-06T14:53:16+08:00',
+      completed_at: '2026-07-06T14:53:16+08:00',
+      distance_m: 0,
+      eta_pickup_sec: 100,
+      created_at: '2026-07-06T14:53:13+08:00',
+      updated_at: '2026-07-06T14:53:16+08:00',
+    },
+    track_geojson: '',
+    events: [],
+    stops: [],
+    rating,
+  };
+}
+
 describe('OrderDetailPage', () => {
   beforeEach(() => {
     mockFetchRideDetail.mockReset();
@@ -411,5 +439,33 @@ describe('OrderDetailPage', () => {
       expect(screen.getByText('訂單 #1')).toBeInTheDocument();
     });
     expect(screen.queryByText(/^停靠點（/)).not.toBeInTheDocument();
+  });
+
+  it('乘客評分（B5）：有評分顯示星等與評論', async () => {
+    mockFetchRideDetail.mockResolvedValue(
+      ratingFixture({ score: 4, comment: '司機很準時', created_at: '2026-07-27T20:07:00+08:00' }),
+    );
+    renderWithProviders(<OrderDetailPage />, { route: '/orders/1', path: '/orders/:id' });
+
+    await waitFor(() => expect(screen.getByText('乘客評分')).toBeInTheDocument());
+    expect(screen.getByText('4 / 5')).toBeInTheDocument();
+    expect(screen.getByText('司機很準時')).toBeInTheDocument();
+  });
+
+  it('乘客評分（B5）：只給星等沒留言時說明，未評分整塊不顯示', async () => {
+    mockFetchRideDetail.mockResolvedValue(ratingFixture({ score: 5, comment: '', created_at: '' }));
+    const { unmount } = renderWithProviders(<OrderDetailPage />, {
+      route: '/orders/1',
+      path: '/orders/:id',
+    });
+    await waitFor(() => expect(screen.getByText('乘客評分')).toBeInTheDocument());
+    expect(screen.getByText('乘客只給了星等，沒有留言')).toBeInTheDocument();
+    unmount();
+
+    // 未評分（後端不帶 rating 鍵）→ 整塊不顯示，不留一張空卡片
+    mockFetchRideDetail.mockResolvedValue(ratingFixture(null));
+    renderWithProviders(<OrderDetailPage />, { route: '/orders/1', path: '/orders/:id' });
+    await waitFor(() => expect(screen.getByText('訂單 #1')).toBeInTheDocument());
+    expect(screen.queryByText('乘客評分')).not.toBeInTheDocument();
   });
 });

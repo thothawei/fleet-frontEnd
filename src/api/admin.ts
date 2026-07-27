@@ -26,6 +26,9 @@ export interface Driver {
   PlateNumber: string; // 車牌（O1）；'' 為未填
   VehicleReviewStatus: string; // 審核狀態（O5）：''/pending/approved/rejected
   VehicleReviewNote: string; // 退回原因（O5）
+  /** 乘客評分平均（B5）；RatingCount 為 0 時無意義，呈現端要顯示「尚無評分」而非 0.0 */
+  RatingAvg: number;
+  RatingCount: number;
   CreatedAt: string; // 後端回傳的 ISO 時間字串；缺值為空字串
   UpdatedAt: string;
 }
@@ -152,12 +155,21 @@ export interface RideEvent {
   created_at: string;
 }
 
+/** 乘客給司機的評分（B5）；一趟至多一則 */
+export interface RideRating {
+  score: number;
+  comment: string;
+  created_at: string;
+}
+
 export interface RideDetail {
   ride: RideFull;
   track_geojson: string;
   events: RideEvent[];
   /** 多停靠點行程（N）才有；單點訂單為空陣列 */
   stops: RideStop[];
+  /** 乘客評分（B5）；**未評分時為 null**（後端不帶該鍵） */
+  rating: RideRating | null;
 }
 
 // 軌跡 GeoJSON：admin 端點回傳裸 LineString；司機/乘客端點包成 Feature
@@ -210,6 +222,9 @@ export function normalizeDriver(raw: Record<string, unknown>): Driver {
     PlateNumber: str(raw, 'PlateNumber', 'plate_number'),
     VehicleReviewStatus: str(raw, 'VehicleReviewStatus', 'vehicle_review_status'),
     VehicleReviewNote: str(raw, 'VehicleReviewNote', 'vehicle_review_note'),
+    // 舊後端不帶 rating_* → num() 回 0，等同「尚無評分」，不需另做缺鍵判斷
+    RatingAvg: num(raw, 'RatingAvg', 'rating_avg'),
+    RatingCount: num(raw, 'RatingCount', 'rating_count'),
     CreatedAt: str(raw, 'CreatedAt', 'created_at'),
     UpdatedAt: str(raw, 'UpdatedAt', 'updated_at'),
   };
@@ -260,6 +275,7 @@ export async function fetchRideDetail(id: number): Promise<RideDetail> {
     track_geojson: string;
     events?: Record<string, unknown>[];
     stops?: Record<string, unknown>[];
+    rating?: Record<string, unknown>;
   }>(`/admin/rides/${id}`);
   return {
     ride: normalizeRide(data.ride),
@@ -267,6 +283,16 @@ export async function fetchRideDetail(id: number): Promise<RideDetail> {
     events: (data.events ?? []).map(normalizeRideEvent),
     // 單點訂單後端不帶 stops 鍵（omitempty），缺席＝沒有停靠點，不是錯誤
     stops: (data.stops ?? []).map(normalizeRideStop),
+    // 未評分時後端不帶 rating 鍵——缺席＝乘客沒評，不是錯誤
+    rating: data.rating ? normalizeRideRating(data.rating) : null,
+  };
+}
+
+export function normalizeRideRating(raw: Record<string, unknown>): RideRating {
+  return {
+    score: num(raw, 'score'),
+    comment: str(raw, 'comment'),
+    created_at: str(raw, 'created_at'),
   };
 }
 
