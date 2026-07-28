@@ -203,7 +203,7 @@ VITE_WS_BASE=wss://api.example.com
   訂單詳情「乘客評分」卡（唯讀星等＋評論；未評分整塊不顯示）。
   串後端 `GET /api/admin/drivers` 的 `rating_avg`／`rating_count` 與 `GET /api/admin/rides/:id` 的 `rating`。
 - **韌性/品質**：全域 Error Boundary、JWT `exp` 主動登出、統一錯誤處理層（`utils/apiError`，mutation＋query 讀取失敗全域提示）、Skeleton 載入、WS 斷線重連。
-- **工程**：路由 code-splitting、Vitest（25 檔 123 tests）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
+- **工程**：路由 code-splitting、Vitest（**26 檔 134 tests**，2026-07-28）、CI（lint→test→build）、antd v6 deprecation 全清（靜態 message/Modal 改 `App.useApp()`）。
 
 > **2026-07-16 加入的 N／O／P 需求已於 2026-07-22 補完**（PR #21），
 > 上方「已完成」有逐項記錄；本段先前寫「都還沒實作」是過期資訊，2026-07-27 修正。
