@@ -1,5 +1,19 @@
 # Admin 後台 UI/UX 翻新 Implementation Plan
 
+> # ✅ 本計畫已全數執行完畢（2026-07-10 實作，2026-07-28 回填勾選）
+> 23 個 Step 全部完成，勾選框於 2026-07-28 一次補上——實作當下沒回填，
+> 導致這份文件看起來像「完全沒動工」。**這是已完成工作的紀錄，不是待辦清單。**
+>
+> **2026-07-28 逐檔查證的產出**（全部存在）：
+> `src/theme/tokens.ts`、`src/main.tsx` 以 `ConfigProvider theme={antdTheme}` 掛上、
+> `src/constants.ts` 語意色、改寫後的 `src/components/AppLayout.tsx`、
+> `src/pages/DashboardPage.tsx`（121 行）＋ `DashboardPage.test.tsx`、
+> `src/App.tsx` 路由 `/` → Dashboard 且即時車隊移到 `/fleet`、
+> `src/pages/LoginPage.tsx` 以 `BRAND_PRIMARY` 做漸層與 logo 底色、
+> `src/components/PageHeader.tsx`——**計畫寫「三頁套用」，實際已套 8 頁**。
+>
+> Task 6 的瀏覽器實測也做過，截圖在 `docs/screenshots/ux-2026-07-10/`。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把 line-fleet-admin 從 AntD 預設樣式升級為 LINE 綠品牌主題，新增營運總覽 Dashboard 首頁，並統一狀態語意色與頁面骨架。
@@ -31,7 +45,7 @@
 **Interfaces:**
 - Produces: `antdTheme: ThemeConfig`、`BRAND_PRIMARY = '#06C755'`、`SEMANTIC = { waiting, active, done, danger, offline }`（後續 task 的 Dashboard KPI、PageHeader 會 import `BRAND_PRIMARY` / `SEMANTIC`）。
 
-- [ ] **Step 1: 寫失敗測試**
+- [x] **Step 1: 寫失敗測試**
 
 `src/theme/tokens.test.ts`：
 
@@ -57,12 +71,12 @@ describe('theme tokens', () => {
 });
 ```
 
-- [ ] **Step 2: 跑測試確認失敗**
+- [x] **Step 2: 跑測試確認失敗**
 
 Run: `npx vitest run src/theme/tokens.test.ts`
 Expected: FAIL（`Cannot find module './tokens'`）
 
-- [ ] **Step 3: 實作 `src/theme/tokens.ts`**
+- [x] **Step 3: 實作 `src/theme/tokens.ts`**
 
 ```ts
 import type { ThemeConfig } from 'antd';
@@ -96,11 +110,11 @@ export const antdTheme: ThemeConfig = {
 };
 ```
 
-- [ ] **Step 4: `src/main.tsx` 掛 theme**
+- [x] **Step 4: `src/main.tsx` 掛 theme**
 
 `<ConfigProvider locale={zhTW}>` 改為 `<ConfigProvider locale={zhTW} theme={antdTheme}>`，並加 `import { antdTheme } from './theme/tokens';`。
 
-- [ ] **Step 5: `src/constants.ts` 對齊語意色**
+- [x] **Step 5: `src/constants.ts` 對齊語意色**
 
 RIDE_STATUS / DRIVER_STATUS 的 `color` 改為（label 全部不動，避免破壞測試斷言）：
 
@@ -126,7 +140,7 @@ export const DRIVER_STATUS: Record<number, { label: string; color: string }> = {
 
 （其餘 `DRIVER_STATUS_DISABLED`、`isRideCancellable` 保持原樣。）
 
-- [ ] **Step 6: 全測試 + commit**
+- [x] **Step 6: 全測試 + commit**
 
 Run: `npm test`
 Expected: 全過（色值不影響既有 label 斷言）。
@@ -148,7 +162,7 @@ git commit -m "feat(theme): LINE 綠品牌 tokens + 狀態語意色（UI/UX 翻�
 - Consumes: `BRAND_PRIMARY`（Task 1）。
 - Produces: 選單 key 集合 `['/', '/fleet', '/orders', '/drivers', '/reports', '/settings']`（＋superadmin `/users`）；Task 3 的路由表必須與此一致。
 
-- [ ] **Step 1: 更新測試斷言（先失敗）**
+- [x] **Step 1: 更新測試斷言（先失敗）**
 
 在 `src/components/AppLayout.test.tsx` 既有選單斷言處，加入／改為：
 
@@ -160,7 +174,7 @@ expect(screen.getByText('Fleet 派遣後台')).toBeInTheDocument();
 
 Run: `npx vitest run src/components/AppLayout.test.tsx` → Expected: FAIL（尚無「營運總覽」）。
 
-- [ ] **Step 2: 改寫 `AppLayout.tsx`**
+- [x] **Step 2: 改寫 `AppLayout.tsx`**
 
 ```tsx
 import { BarChartOutlined, CarOutlined, DashboardOutlined, EnvironmentOutlined, LogoutOutlined, OrderedListOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
@@ -238,7 +252,7 @@ export default function AppLayout() {
 }
 ```
 
-- [ ] **Step 3: 測試 + commit**
+- [x] **Step 3: 測試 + commit**
 
 Run: `npm test` → Expected: 全過。
 
@@ -260,7 +274,7 @@ git commit -m "feat(layout): 亮色側欄品牌化＋營運總覽選單（Task 2
 - Consumes: `fetchRides(status?, limit)`、`fetchDrivers()`、`fetchFleet()`（`src/api/admin.ts` 既有）；`SEMANTIC`（Task 1）；`RIDE_STATUS`。
 - Produces: route `/` 為 DashboardPage；FleetPage 移至 `/fleet`（與 Task 2 選單 key 對齊）。
 
-- [ ] **Step 1: 寫失敗測試 `src/pages/DashboardPage.test.tsx`**
+- [x] **Step 1: 寫失敗測試 `src/pages/DashboardPage.test.tsx`**
 
 ```tsx
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -319,12 +333,12 @@ describe('DashboardPage', () => {
 });
 ```
 
-- [ ] **Step 2: 跑測試確認失敗**
+- [x] **Step 2: 跑測試確認失敗**
 
 Run: `npx vitest run src/pages/DashboardPage.test.tsx`
 Expected: FAIL（`Cannot find module './DashboardPage'`）
 
-- [ ] **Step 3: 實作 `src/pages/DashboardPage.tsx`**
+- [x] **Step 3: 實作 `src/pages/DashboardPage.tsx`**
 
 ```tsx
 import { useMemo } from 'react';
@@ -418,7 +432,7 @@ export default function DashboardPage() {
 
 注意：AntD `Statistic` 不透傳 `data-testid` 時，改包一層 `<div data-testid="...">`——以實際測試結果為準修正，**不得改弱測試**。
 
-- [ ] **Step 4: `src/App.tsx` 路由調整**
+- [x] **Step 4: `src/App.tsx` 路由調整**
 
 - 加 `const DashboardPage = lazy(() => import('./pages/DashboardPage'));`
 - `<Route path="/" element={<FleetPage />} />` 改為兩條：
@@ -428,7 +442,7 @@ export default function DashboardPage() {
 <Route path="/fleet" element={<FleetPage />} />
 ```
 
-- [ ] **Step 5: 測試 + commit**
+- [x] **Step 5: 測試 + commit**
 
 Run: `npm test` → Expected: 全過（含既有 FleetPage 測試）。
 
@@ -448,7 +462,7 @@ git commit -m "feat(dashboard): 營運總覽首頁＋即時車隊移至 /fleet�
 **Interfaces:**
 - Consumes: `BRAND_PRIMARY`（Task 1）。表單欄位、`login()`、`saveSession()` 呼叫完全不動。
 
-- [ ] **Step 1: 改版面（僅外觀）**
+- [x] **Step 1: 改版面（僅外觀）**
 
 `LoginPage.tsx` 的外層 div 與標題區改為：
 
@@ -483,11 +497,11 @@ git commit -m "feat(dashboard): 營運總覽首頁＋即時車隊移至 /fleet�
 
 並加 `import { BRAND_PRIMARY } from '../theme/tokens';`。
 
-- [ ] **Step 2: 同步測試字串**
+- [x] **Step 2: 同步測試字串**
 
 `LoginPage.test.tsx` 若斷言舊標題「🚗 派遣後台登入」，改為 `Fleet 派遣後台`（僅字串，expect 結構不動）。
 
-- [ ] **Step 3: 測試 + commit**
+- [x] **Step 3: 測試 + commit**
 
 Run: `npm test` → Expected: 全過。
 
@@ -508,7 +522,7 @@ git commit -m "feat(login): 登入頁品牌化（Task 4）"
 **Interfaces:**
 - Produces: `<PageHeader title extra? />`——`title: string`、`extra?: ReactNode`。
 
-- [ ] **Step 1: 實作 `src/components/PageHeader.tsx`**
+- [x] **Step 1: 實作 `src/components/PageHeader.tsx`**
 
 ```tsx
 import type { ReactNode } from 'react';
@@ -525,7 +539,7 @@ export default function PageHeader({ title, extra }: { title: string; extra?: Re
 }
 ```
 
-- [ ] **Step 2: 三頁套用**
+- [x] **Step 2: 三頁套用**
 
 各頁把 `Card title="訂單管理"`（或同義寫法）改為：頁面最外層先放 `<PageHeader title="訂單管理" extra={原本的篩選器/操作區} />`，Card 保留但拿掉重複 title；**顯示文字保持「訂單管理」「司機管理」「日報表」不變**（測試斷言依賴）。每頁 `Table` 補：
 
@@ -535,7 +549,7 @@ locale={{ emptyText: <Empty description="目前沒有資料" /> }}
 
 （`import { Empty } from 'antd';`）
 
-- [ ] **Step 3: 測試 + commit**
+- [x] **Step 3: 測試 + commit**
 
 Run: `npm test` → Expected: 全過。
 
@@ -551,7 +565,7 @@ git commit -m "refactor(pages): 統一 PageHeader＋表格空狀態（Task 5）"
 **Files:**
 - Modify: `README.md`（結構段補 `theme/`、`DashboardPage`）、`docs/TODO.md`（記錄本次完成項）
 
-- [ ] **Step 1: 全量驗證**
+- [x] **Step 1: 全量驗證**
 
 ```bash
 npm test        # 全過
@@ -559,11 +573,11 @@ npm run build   # tsc -b + vite build 過
 npm run lint    # oxlint 過
 ```
 
-- [ ] **Step 2: 瀏覽器實測**
+- [x] **Step 2: 瀏覽器實測**
 
 `npm start`（起後端 docker + vite）後逐頁檢查：登入頁品牌樣式 → `/` Dashboard KPI 有數字 → `/fleet` 地圖正常 → 訂單／司機／日報表 tag 色與空狀態 → 側欄高亮正確（含 `/orders/:id`）。有 `npm run visual:verify` 就一併跑。驗完 `npm run stop` 關乾淨。
 
-- [ ] **Step 3: 文件收尾 + commit + push**
+- [x] **Step 3: 文件收尾 + commit + push**
 
 ```bash
 git add README.md docs/TODO.md
