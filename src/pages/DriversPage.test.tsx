@@ -77,6 +77,44 @@ describe('DriversPage', () => {
     });
     expect(screen.queryByText('寵物車司機')).not.toBeInTheDocument();
   });
+
+  // 搜尋框寫著「搜尋姓名／電話／車牌」——**三個欄位都要真的能搜**。
+  // placeholder 承諾了卻搜不到比沒有搜尋更糟：使用者會以為查無此人。
+  it('關鍵字搜尋：姓名／電話／車牌三個欄位都命中', async () => {
+    const user = userEvent.setup();
+    mockFetchDrivers.mockResolvedValue([
+      { ID: 1, Name: '王大明', Phone: '0911111111', LineUserID: 'l1', Status: 1, VehicleType: 'sedan', PlateNumber: 'AAA-1111', VehicleReviewStatus: 'approved', VehicleReviewNote: '' },
+      { ID: 2, Name: '李小美', Phone: '0922222222', LineUserID: 'l2', Status: 1, VehicleType: 'pet', PlateNumber: 'PET-0002', VehicleReviewStatus: 'approved', VehicleReviewNote: '' },
+    ]);
+
+    renderWithProviders(<DriversPage />);
+    await waitFor(() => {
+      expect(screen.getByText('王大明')).toBeInTheDocument();
+    });
+
+    const search = screen.getByPlaceholderText('搜尋姓名／電話／車牌');
+
+    await user.type(search, '李小');
+    await waitFor(() => {
+      expect(screen.queryByText('王大明')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('李小美')).toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, '0911');
+    await waitFor(() => {
+      expect(screen.queryByText('李小美')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('王大明')).toBeInTheDocument();
+
+    // 車牌大小寫不該影響命中——路邊比對車牌時沒人在意大小寫
+    await user.clear(search);
+    await user.type(search, 'pet-0002');
+    await waitFor(() => {
+      expect(screen.queryByText('王大明')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('李小美')).toBeInTheDocument();
+  });
 });
 
 describe('DriversPage 評價欄（B5）', () => {
