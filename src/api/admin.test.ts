@@ -293,13 +293,36 @@ describe('P2 admin write APIs', () => {
     vi.mocked(api.put).mockReset();
   });
 
-  it('patchDriverStatus', async () => {
+  // mock 用的是 2026-07-28 對帳從真後端抓下來的形狀：**混合大小寫**，
+  // 且不含 rating_avg／rating_count。舊版直接回 data.driver（沒正規化），
+  // 車輛三欄會是 undefined——當時的 mock 只有 PascalCase，所以測不出來。
+  it('patchDriverStatus 回正規化後的 driver（後端是混合大小寫）', async () => {
     vi.mocked(api.patch).mockResolvedValue({
-      data: { driver: { ID: 1, Name: 'A', Phone: '', LineUserID: 'U1', Status: 3 } },
+      data: {
+        driver: {
+          ID: 1,
+          LineUserID: 'U1',
+          Name: 'A',
+          Phone: '',
+          Status: 3,
+          vehicle_type: 'sedan',
+          plate_number: 'LI-3748',
+          vehicle_review_status: 'approved',
+          vehicle_review_note: '',
+          CreatedAt: '2026-07-28T12:42:29+08:00',
+          UpdatedAt: '2026-07-28T12:42:35+08:00',
+        },
+      },
     });
     const driver = await patchDriverStatus(1, false);
     expect(api.patch).toHaveBeenCalledWith('/admin/drivers/1/status', { enabled: false });
     expect(driver.Status).toBe(3);
+    expect(driver.VehicleType).toBe('sedan');
+    expect(driver.PlateNumber).toBe('LI-3748');
+    expect(driver.VehicleReviewStatus).toBe('approved');
+    // 後端這支不回評價 → 正規化補 0，而不是 undefined（表格排序會直接壞掉）
+    expect(driver.RatingAvg).toBe(0);
+    expect(driver.RatingCount).toBe(0);
   });
 
   it('reviewDriverVehicle 核准', async () => {

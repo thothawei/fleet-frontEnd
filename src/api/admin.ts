@@ -503,9 +503,21 @@ export interface DispatchSettings {
   rate_limit_per_min: number;
 }
 
+/**
+ * 啟停司機。回傳**正規化後**的 driver。
+ *
+ * 後端這支回的是混合大小寫（`ID`／`Name`／`Status` 走 Go 欄位名，
+ * `vehicle_type`／`plate_number`／`vehicle_review_status` 走 json tag，
+ * 且**不含** `rating_avg`／`rating_count`）。直接當 `Driver` 用，
+ * 車輛三欄與評價會是 undefined——目前呼叫端只 `invalidateQueries`、不看回傳值所以沒出事，
+ * 但型別在說謊：哪天有人拿它去 `setQueryData`，那一列的車種車牌就會憑空消失。
+ */
 export async function patchDriverStatus(id: number, enabled: boolean): Promise<Driver> {
-  const { data } = await api.patch<{ driver: Driver }>(`/admin/drivers/${id}/status`, { enabled });
-  return data.driver;
+  const { data } = await api.patch<{ driver: Record<string, unknown> }>(
+    `/admin/drivers/${id}/status`,
+    { enabled },
+  );
+  return normalizeDriver(data.driver);
 }
 
 // 車輛審核（O5）：approve=false 時 note 必填（退回原因）。回傳正規化前的 raw driver。
