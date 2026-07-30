@@ -13,7 +13,7 @@ import {
 } from '../api/admin';
 import PageHeader from '../components/PageHeader';
 import { isSuperadmin } from '../auth/auth';
-import { apiError } from '../utils/apiError';
+import { handleWriteError } from '../utils/writeError';
 import { fmtYuan } from '../utils/money';
 
 const STATUS_OPTIONS = [
@@ -49,7 +49,12 @@ export default function MembershipInvoicesPage() {
       message.success(created > 0 ? `已產生 ${created} 筆會費帳單` : '本月無新帳單可產生（已是最新）');
       invalidate();
     },
-    onError: (err) => message.error(apiError(err, '產生帳單失敗')),
+    onError: (err) =>
+      handleWriteError(err, '產生帳單失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['membership-invoices', monthStr]],
+      }),
   });
 
   const paidMutation = useMutation({
@@ -58,7 +63,12 @@ export default function MembershipInvoicesPage() {
       message.success(paid ? '已標記為已繳' : '已改為未繳');
       invalidate();
     },
-    onError: (err) => message.error(apiError(err, '更新失敗')),
+    onError: (err) =>
+      handleWriteError(err, '更新失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['membership-invoices', monthStr]],
+      }),
   });
 
   const columns: ColumnsType<MembershipInvoice> = [

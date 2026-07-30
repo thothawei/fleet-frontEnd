@@ -8,7 +8,7 @@ import {
   type DispatchSettings,
 } from '../api/admin';
 import { canDispatch } from '../auth/auth';
-import { apiError } from '../utils/apiError';
+import { handleWriteError } from '../utils/writeError';
 
 const FIELD_RULES = {
   radius_m: { min: 100, max: 50000, label: '搜尋半徑（公尺）' },
@@ -39,7 +39,12 @@ export default function SettingsPage() {
       form.setFieldsValue(updated);
       queryClient.setQueryData(['dispatch-settings'], updated);
     },
-    onError: (err) => message.error(apiError(err, '更新失敗')),
+    onError: (err) =>
+      handleWriteError(err, '更新失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['dispatch-settings']],
+      }),
   });
 
   if (isLoading) {

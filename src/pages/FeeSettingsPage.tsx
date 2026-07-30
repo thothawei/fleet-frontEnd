@@ -4,7 +4,7 @@ import { Alert, App, Button, Card, Form, InputNumber, Skeleton } from 'antd';
 
 import { fetchFeeSettings, updateFeeSettings, type FeeSettings } from '../api/admin';
 import { isSuperadmin } from '../auth/auth';
-import { apiError } from '../utils/apiError';
+import { handleWriteError } from '../utils/writeError';
 
 // 表單以「元 / %」為單位（對使用者友善），送出前換算回後端的「分 / bps」。
 interface FeeFormValues {
@@ -65,7 +65,12 @@ export default function FeeSettingsPage() {
       form.setFieldsValue(toForm(updated));
       queryClient.setQueryData(['fee-settings'], updated);
     },
-    onError: (err) => message.error(apiError(err, '更新失敗')),
+    onError: (err) =>
+      handleWriteError(err, '更新失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['fee-settings']],
+      }),
   });
 
   if (isLoading) {

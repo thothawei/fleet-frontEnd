@@ -13,7 +13,7 @@
 | 核心瀏覽 | ✅ 登入、營運總覽 Dashboard、即時車隊地圖、訂單列表/詳情+軌跡回放（含日期／關鍵字篩選）、司機列表、日報表（可匯出 CSV） |
 | 寫入操作 | ✅ 司機啟停、派單參數、強制取消（2026-07-08） |
 | 韌性 | ✅ 全域 Error Boundary、JWT `exp` 主動登出（2026-07-10） |
-| 測試 | ✅ **26 測試檔／134 tests**（2026-07-28；含 Dashboard／tokens／csv／ErrorBoundary／`DriverDetailPage`） |
+| 測試 | ✅ **27 測試檔／143 tests**（2026-07-30；含 Dashboard／tokens／csv／ErrorBoundary／`DriverDetailPage`／`writeError`） |
 | CI | ✅ lint + test + build（`.github/workflows/ci.yml`）；2026-07-10 修好 `npm ci` ERESOLVE |
 | 視覺驗收 | ✅ C5（2026-07-08）＋ UI/UX 翻新腳本已對齊新路由（`docs/screenshots/ux-2026-07-10/`） |
 
@@ -28,6 +28,74 @@
 **沒人知道它該有測試**：司機詳情頁連測試檔都不存在、popup 連結與登出確認也都沒被覆蓋。
 同日補上 10 個測試（124 → **134 passed**），FleetPage 兩案做過反向驗證
 （拿掉 popup 連結／拿掉委派 handler，各自只讓對應那案 FAIL）。
+
+---
+
+## ⏱️ 寫入結果不明時的處理（2026-07-30，跨 repo）
+
+> 起因：fleet-app 從第五輪起陸續把 App 端每一條寫入都補上「逾時對帳」，
+> 而 app 的 TODO 早就記著「**admin 端完全沒有逾時對帳的概念**，值得盤點一次」。
+> 這一輪就是那次盤點——**先取證再修**，證據是真瀏覽器 ＋ 吃掉回應的代理
+> （[`line-fleet-app/tool/lossy_proxy.py`](../../line-fleet-app/tool/lossy_proxy.py)）。
+
+### 盤點結果：九條寫入路徑，真正會害人的是「強制取消」
+
+`src/api/admin.ts` 的寫入端點共九支。多數**形狀上就是冪等的**
+（PUT 費率／派單參數、PATCH `paid`／`enabled` 都是設定成某個值，重送會收斂），
+所以 App 那套「查一次狀態再判斷生效沒」的對帳在這裡是過度設計。
+真正的問題只有一個，而且九條全中：
+
+**`onError` 只跳一則錯誤訊息，從來不重新讀後端。** 於是逾時之後畫面停在舊狀態，
+訊息還寫著「請求逾時，**請稍後再試**」——把操作者推向唯一錯誤的下一步。
+
+### 實跑重現（`ride #30`，blackhole `POST:/api/admin/rides/\d+/cancel`）
+
+1. 代理 log：`上游回 HTTP/1.1 200 OK，不交還 App` ＝ **後端真的取消了**（DB `status=9`）。
+2. 15 秒後畫面：紅色 toast「請求逾時，請稍後再試」、狀態欄仍是「前往接客」、
+   **確認對話框還開著**。
+3. 操作者照著訊息再按一次 → **HTTP 500 `訂單狀態已變更，無法取消`**。
+
+也就是說：乘客與司機都已經收到取消通知了，後台卻連按兩次、看到兩則錯誤，
+最後以為「這張單沒取消掉」。
+
+### 修法（兩端一起）
+
+**後端** dispatch [PR #69](https://github.com/thothawei/fleet-dispatch/pull/69)：
+`AdminHandler.CancelRide` 把 `ErrRideStarted`／`ErrRideStateChanged` 從 500 改判 **409**
+（乘客端 `readStatusForErr` 早就是這樣分類，admin 這支是漏網的）。
+沒有 409，前端根本分不出「伺服器壞了」與「這件事已經生效了」。
+
+**前端**（本 repo）新增 `src/utils/writeError.ts`：
+
+- `isUncertainWrite(err)`：**連線類（沒有 response）或 409** ＝ 這次寫入結果不明。
+- `handleWriteError(err, fallback, { notify, queryClient, invalidate })`：
+  結果不明 → **重讀指定的 query ＋ 用不宣稱失敗的措辭**
+  （「沒有收到後端回應，這次操作可能已經生效——畫面已重新整理，請確認結果後再決定是否重試」）；
+  明確的失敗（400／403／500）→ 維持原本行為，顯示原因、不動畫面。
+  **顯示訊息與重新整理綁在同一支函式**，否則遲早出現「訊息說已重新整理、其實沒有」的謊。
+- 九條寫入路徑全部改用它（訂單取消、車輛審核、司機啟停、費率、派單參數、會費帳單兩支、帳號兩支）。
+- **確認對話框在送出後一律關閉**（訂單強制取消、車輛核准／退回）：結果由 toast 說明、
+  畫面已重讀，留著對話框只會誘導再按一次。原因沒填那種**表單驗證**仍然留著對話框。
+
+### 驗收
+
+- `tsc -b`／`oxlint`／`vite build` 綠；**Vitest 143 passed**（134 ＋ 新 9）。
+- **反向確認**：把 `handleWriteError` 的重讀拿掉 → 只有新加的 3 案 FAIL，其餘照過。
+- **真瀏覽器 E2E（Claude Browser ＋ 本機 dispatch ＋ lossy proxy）**：
+  - 逾時（`ride #33`）：代理吃掉回應 → 15 秒後**對話框自動關閉**、
+    toast「沒有收到後端回應，這次操作可能已經生效——畫面已重新整理…」、
+    狀態欄當場變「已取消」、完成時間出現、「強制取消」按鈕消失。
+    代理 log 可見逾時後那次 `GET /api/admin/rides/33`。
+  - 409（`ride #34`）：先用 API 在後台背後取消，畫面還停在「前往接客」→ 按強制取消 →
+    `POST … -> 409 Conflict` → **同一秒**接著 `GET /api/admin/rides/34` → 畫面翻成「已取消」。
+    （這條的 toast 文案由單元測試斷言；瀏覽器這邊證的是 409→重讀→畫面正確這條鏈。）
+
+### 沒做、以及為什麼
+
+- **沒有把 App 那套「查一次狀態確認生效」搬過來**：admin 的寫入多為冪等設定，
+  重讀畫面就足以讓操作者判斷，再加一層判準只是多一組會過時的規則。
+- **`GenerateMembershipInvoices` 本來就冪等**（後端同月重跑只回 `created: 0`），
+  維持現狀即可，不特別處理。
 
 ---
 
