@@ -24,8 +24,8 @@ import {
 } from '../constants';
 
 import { DEFAULT_MAP_CENTER, MAP_HEIGHT, MAP_STYLE } from '../components/mapStyle';
-import { apiError } from '../utils/apiError';
 import { fmtYuan } from '../utils/money';
+import { handleWriteError } from '../utils/writeError';
 const TRACK_SOURCE_ID = 'ride-track';
 const TRACK_LAYER_ID = 'ride-track-line';
 const PLAYBACK_INTERVAL_MS = 300;
@@ -78,7 +78,12 @@ export default function OrderDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['ride', rideId] });
       queryClient.invalidateQueries({ queryKey: ['rides'] });
     },
-    onError: (err) => message.error(apiError(err, '取消失敗')),
+    onError: (err) =>
+      handleWriteError(err, '取消失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['ride', rideId], ['rides']],
+      }),
   });
 
   const confirmCancel = () => {
@@ -88,7 +93,10 @@ export default function OrderDetailPage() {
       okText: '確認取消',
       okButtonProps: { danger: true },
       cancelText: '返回',
-      onOk: () => cancelMutation.mutateAsync(),
+      // **失敗也關掉對話框**：結果由 onError 的訊息負責說明，畫面（結果不明時）
+      // 也已經重讀過後端——操作者該看的是那個結果，不是留在對話框上再按一次確認，
+      // 那一按多半只會換來另一則「訂單狀態已變更」。要重試，頁面上的按鈕還在。
+      onOk: () => cancelMutation.mutateAsync().catch(() => undefined),
     });
   };
 

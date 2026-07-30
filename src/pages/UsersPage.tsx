@@ -4,7 +4,7 @@ import { App, Button, Card, Form, Input, Modal, Select, Switch, Table } from 'an
 import type { ColumnsType } from 'antd/es/table';
 
 import { createAdmin, listAdmins, updateAdmin, type AdminUser } from '../api/admin';
-import { apiError } from '../utils/apiError';
+import { handleWriteError } from '../utils/writeError';
 
 const ROLE_OPTS = [
   { value: 'viewer', label: '檢視者' },
@@ -39,7 +39,12 @@ export default function UsersPage() {
       form.resetFields();
       refresh();
     },
-    onError: (err) => message.error(apiError(err, '建立失敗')),
+    onError: (err) =>
+      handleWriteError(err, '建立失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['admins']],
+      }),
   });
 
   const updateMut = useMutation({
@@ -49,7 +54,12 @@ export default function UsersPage() {
       message.success('已更新');
       refresh();
     },
-    onError: (err) => message.error(apiError(err, '更新失敗')),
+    onError: (err) =>
+      handleWriteError(err, '更新失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['admins']],
+      }),
   });
 
   const columns: ColumnsType<AdminUser> = [

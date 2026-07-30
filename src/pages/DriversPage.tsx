@@ -16,7 +16,7 @@ import {
   VEHICLE_REVIEW_STATUS,
   VEHICLE_TYPE_LABEL,
 } from '../constants';
-import { apiError } from '../utils/apiError';
+import { handleWriteError } from '../utils/writeError';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: '全部狀態' },
@@ -78,7 +78,12 @@ export default function DriversPage() {
       message.success('已更新司機狀態');
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
     },
-    onError: (err) => message.error(apiError(err, '操作失敗')),
+    onError: (err) =>
+      handleWriteError(err, '操作失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['drivers']],
+      }),
   });
 
   // 車輛審核（O5）：核准/退回。退回必附原因（後端也擋）。
@@ -89,7 +94,12 @@ export default function DriversPage() {
       message.success(vars.approve ? '已核准車輛' : '已退回車輛');
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
     },
-    onError: (err) => message.error(apiError(err, '審核失敗')),
+    onError: (err) =>
+      handleWriteError(err, '審核失敗', {
+        notify: message,
+        queryClient,
+        invalidate: [['drivers']],
+      }),
   });
 
   const approveVehicle = (driver: Driver) => {
@@ -98,7 +108,9 @@ export default function DriversPage() {
       content: `車種 ${VEHICLE_TYPE_LABEL[driver.VehicleType] ?? driver.VehicleType}／車牌 ${driver.PlateNumber}。核准後即可開始接單。`,
       okText: '核准',
       cancelText: '取消',
-      onOk: () => reviewMutation.mutateAsync({ id: driver.ID, approve: true }),
+      // 失敗也關掉對話框（與訂單強制取消同一個理由）：清單在結果不明時已重讀過後端，
+      // 再按一次核准多半只會換來 409「這台車不是待審核狀態」。
+      onOk: () => reviewMutation.mutateAsync({ id: driver.ID, approve: true }).catch(() => undefined),
     });
   };
 
@@ -123,7 +135,11 @@ export default function DriversPage() {
           message.error('退回必須填寫原因');
           return Promise.reject(new Error('note required'));
         }
-        return reviewMutation.mutateAsync({ id: driver.ID, approve: false, note: note.trim() });
+        // 原因沒填是上面那個 reject（對話框要留著讓他補打）；
+        // 送出之後的結果一律關掉對話框，理由同核准。
+        return reviewMutation
+          .mutateAsync({ id: driver.ID, approve: false, note: note.trim() })
+          .catch(() => undefined);
       },
     });
   };

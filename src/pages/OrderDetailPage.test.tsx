@@ -1,9 +1,55 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { AxiosError, AxiosHeaders } from 'axios';
 
 import OrderDetailPage from './OrderDetailPage';
 import { setRole } from '../auth/auth';
 import { renderWithProviders } from '../test/render';
+
+/** 逾時／斷線：請求送出去了，但沒有任何回應——後端可能已經做完了。 */
+function connectionError(): AxiosError {
+  return new AxiosError('timeout of 15000ms exceeded', 'ECONNABORTED');
+}
+
+/** 後端有明確回答的失敗。 */
+function responseError(status: number, message: string): AxiosError {
+  const err = new AxiosError('failed');
+  err.response = {
+    status,
+    statusText: '',
+    data: { error: message },
+    headers: new AxiosHeaders(),
+    config: { headers: new AxiosHeaders() },
+  };
+  return err;
+}
+
+/** 進行中（可取消）的訂單詳情。 */
+function activeRideFixture() {
+  return {
+    ride: {
+      id: 2,
+      customer_id: 10,
+      driver_id: 2,
+      status: 1,
+      pickup_point: { lat: 25.034, lng: 121.566 },
+      pickup_address: '台北101',
+      dropoff_point: null,
+      dropoff_address: '',
+      requested_at: '2026-07-06T14:53:13+08:00',
+      accepted_at: null,
+      picked_up_at: null,
+      completed_at: null,
+      distance_m: null,
+      eta_pickup_sec: 100,
+      created_at: '2026-07-06T14:53:13+08:00',
+      updated_at: '2026-07-06T14:53:13+08:00',
+    },
+    track_geojson: '{"type":"LineString","coordinates":[]}',
+    events: [],
+  };
+}
 
 const mockFetchRideDetail = vi.fn();
 const mockCancelRideByAdmin = vi.fn();
@@ -278,6 +324,50 @@ describe('OrderDetailPage', () => {
     });
 
     expect(screen.queryByRole('button', { name: /強制取消/ })).not.toBeInTheDocument();
+  });
+
+  // 取消的回應在網路上遺失時，後端其實**已經取消了**。
+  // 舊行為是一則「請求逾時，請稍後再試」＋畫面停在舊狀態，操作者只能再按一次 →
+  // 換來一則「訂單狀態已變更，無法取消」。這兩案釘住新行為：重讀後端 ＋ 不說失敗。
+  it('取消逾時（結果不明）要重讀訂單，而不是停在舊狀態', async () => {
+    setRole('superadmin');
+    mockFetchRideDetail.mockResolvedValue(activeRideFixture());
+    mockCancelRideByAdmin.mockRejectedValue(connectionError());
+
+    renderWithProviders(<OrderDetailPage />, { route: '/orders/2', path: '/orders/:id' });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /強制取消/ })).toBeInTheDocument();
+    });
+    const readsBefore = mockFetchRideDetail.mock.calls.length;
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /強制取消/ }));
+    await user.click(await screen.findByRole('button', { name: /確認取消/ }));
+
+    await waitFor(() => {
+      expect(mockFetchRideDetail.mock.calls.length).toBeGreaterThan(readsBefore);
+    });
+    expect(await screen.findByText(/可能已經生效/)).toBeInTheDocument();
+    expect(screen.queryByText('請求逾時，請稍後再試')).not.toBeInTheDocument();
+  });
+
+  it('明確的失敗（400）維持原樣：顯示原因、不重讀', async () => {
+    setRole('superadmin');
+    mockFetchRideDetail.mockResolvedValue(activeRideFixture());
+    mockCancelRideByAdmin.mockRejectedValue(responseError(400, '參數錯誤'));
+
+    renderWithProviders(<OrderDetailPage />, { route: '/orders/2', path: '/orders/:id' });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /強制取消/ })).toBeInTheDocument();
+    });
+    const readsBefore = mockFetchRideDetail.mock.calls.length;
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /強制取消/ }));
+    await user.click(await screen.findByRole('button', { name: /確認取消/ }));
+
+    expect(await screen.findByText('參數錯誤')).toBeInTheDocument();
+    expect(mockFetchRideDetail.mock.calls.length).toBe(readsBefore);
   });
 
   it('顯示乘客指定車種與司機當時的車輛快照（兩者是不同欄位）', async () => {
